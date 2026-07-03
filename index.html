@@ -10,7 +10,7 @@
      Chat usa el mismo protocolo de mail).
      ============================================================
      ÍNDICE DE NAVEGACIÓN
-     [001] HEAD / META                     - línea 24 
+     [001] HEAD / META                     - línea 24
      [002] ESTILOS CSS                     - línea 31
      [003] HTML — PANTALLAS                - línea 360
      [004] BANCO DE PREGUNTAS (5 módulos)  - línea 470
@@ -21,6 +21,7 @@
      [009] BÚHO SABIO (contexto x pregunta)- línea 900
      [010] RESULTADO + COMPARTIR           - línea 1000
      [011] RANKING LOGIC                   - línea 1150
+     [011b] LOGROS / PANEL FLOTANTE EN VIVO - línea 1200
      [012] PRINT / PDF                     - línea 1300
      [013] NAVEGACIÓN / INIT               - línea 1380
      ============================================================ -->
@@ -286,6 +287,41 @@ a{color:inherit}
 @keyframes bounceIn{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
 #confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
 
+/* ── PANEL FLOTANTE DE LOGROS ── */
+.fab-logros{position:fixed;bottom:1.25rem;right:1.25rem;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--c1),var(--c2));border:none;box-shadow:0 8px 28px rgba(0,0,0,.45);font-size:1.5rem;cursor:pointer;z-index:6000;display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.fab-logros:hover{transform:scale(1.07)}
+.fab-logros .fab-dot{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:var(--c5);border:2px solid var(--bg);display:none;font-size:0}
+.fab-logros .fab-dot.show{display:block}
+.logros-panel{position:fixed;bottom:5.25rem;right:1.25rem;width:340px;max-width:calc(100vw - 1.5rem);max-height:70vh;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.55);z-index:6000;display:none;flex-direction:column;overflow:hidden}
+.logros-panel.open{display:flex}
+.lp-head{background:linear-gradient(135deg,rgba(108,172,228,.2),rgba(255,213,74,.15));padding:.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;border-bottom:1px solid var(--border)}
+.lp-head h3{font-family:var(--fh);font-size:.88rem;font-weight:800}
+.lp-close{background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:50%;width:26px;height:26px;color:var(--text);cursor:pointer;font-size:.8rem}
+.lp-tabs{display:flex;gap:.35rem;padding:.6rem .8rem 0}
+.lp-tab{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:99px;padding:.35rem;font-size:.7rem;font-weight:700;color:var(--muted);cursor:pointer;font-family:var(--fh)}
+.lp-tab.active{background:var(--c2);color:#0a1128;border-color:var(--c2)}
+.lp-body{padding:.9rem 1rem 1.1rem;overflow-y:auto}
+.lp-badge-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
+.lp-badge{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:.6rem .55rem;text-align:center;opacity:.4}
+.lp-badge.earned{opacity:1;border-color:rgba(255,213,74,.4);background:rgba(255,213,74,.07)}
+.lp-badge .lb-icon{font-size:1.4rem}
+.lp-badge .lb-label{font-family:var(--fh);font-size:.66rem;font-weight:800;margin-top:.25rem}
+.lp-badge .lb-desc{font-size:.6rem;color:var(--muted);margin-top:.15rem;line-height:1.3}
+.lp-live-pass{display:flex;gap:.5rem}
+.lp-live-pass input{flex:1;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;padding:.5rem .7rem;color:var(--text);font-size:.82rem;outline:none}
+.lp-live-pass button{background:var(--c1);border:none;border-radius:8px;padding:.5rem .8rem;color:#0a1128;font-weight:700;font-size:.76rem;cursor:pointer}
+.lp-live-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem;margin-bottom:.5rem}
+.lp-live-name{font-weight:700;font-size:.82rem;display:flex;justify-content:space-between;gap:.5rem}
+.lp-live-pts{color:var(--c2);font-family:var(--fh);font-weight:800}
+.lp-live-badges{display:flex;gap:.3rem;margin-top:.4rem;flex-wrap:wrap}
+.lp-live-badges span{font-size:.95rem}
+.lp-live-empty{text-align:center;color:var(--muted);font-size:.8rem;padding:1.2rem 0}
+.lp-live-refresh{font-size:.63rem;color:var(--muted);text-align:center;margin-top:.5rem}
+.lp-toast{position:fixed;bottom:5.25rem;right:1.25rem;background:var(--card);border:2px solid var(--c2);border-radius:14px;padding:.75rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,.5);z-index:9500;max-width:300px;animation:lpToastIn .35s ease}
+@keyframes lpToastIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.lp-toast .lpt-title{font-family:var(--fh);font-weight:800;font-size:.78rem;color:var(--c2);margin-bottom:.3rem}
+.lp-toast .lpt-row{display:flex;align-items:center;gap:.5rem;font-size:.8rem;margin-top:.25rem}
+
 @media(max-width:600px){
   .home-hero h1{font-size:1.5rem}
   .temas-grid{grid-template-columns:1fr 1fr}
@@ -450,6 +486,20 @@ a{color:inherit}
     </div>
     <div class="print-modal-body" id="pm-body"></div>
   </div>
+</div>
+
+<!-- PANEL FLOTANTE DE LOGROS -->
+<button class="fab-logros" id="fab-logros" onclick="toggleLogrosPanel()" title="Logros">🏅<span class="fab-dot" id="fab-dot"></span></button>
+<div class="logros-panel" id="logros-panel">
+  <div class="lp-head">
+    <h3>🏅 Logros</h3>
+    <button class="lp-close" onclick="toggleLogrosPanel(false)">✕</button>
+  </div>
+  <div class="lp-tabs">
+    <button class="lp-tab active" id="lp-tab-mios" onclick="switchLogrosTab('mios')">🙋 Mis logros</button>
+    <button class="lp-tab" id="lp-tab-vivo" onclick="switchLogrosTab('vivo')">👩‍🏫 En vivo</button>
+  </div>
+  <div class="lp-body" id="lp-body"></div>
 </div>
 
 <!-- [004] BANCO DE PREGUNTAS — basado SOLO en nticx-401-1-junio.netlify.app -->
@@ -1085,6 +1135,8 @@ async function showResult(){
   const pct=score/total;
   saveLocalScore(temaId,score);
   renderHome();
+  const nuevosLogros=evaluateLogros();
+  if(nuevosLogros.length)setTimeout(()=>showLogrosToast(nuevosLogros),600);
 
   let emoji,title,stars,msg;
   const esPerfecto=score===total;
@@ -1235,6 +1287,139 @@ async function loadDocente(){
         <button onclick="renderDocenteLogin()" style="background:var(--card2);border:1px solid var(--border);border-radius:99px;padding:.4rem 1rem;color:var(--muted);font-family:var(--fh);font-size:.75rem;cursor:pointer">🔒 Cerrar sesión docente</button>
       </div>`;
   }catch(e){el.innerHTML='<div class="ranking-empty">⚠️ Error al cargar datos.</div>';}
+}
+
+// [011b] LOGROS / PANEL FLOTANTE EN VIVO
+const ACHIEVEMENTS=[
+  {id:'primer_gol',icon:'⚽',label:'Primer Gol',desc:'Jugaste tu primer partido'},
+  {id:'goleador',icon:'🔥',label:'Goleador',desc:'Racha de 3 correctas seguidas'},
+  {id:'crack',icon:'🌟',label:'Crack',desc:'Racha de 5 correctas seguidas'},
+  {id:'figura',icon:'💯',label:'Figura del Partido',desc:'Puntaje perfecto en una fecha'},
+  {id:'fase_grupos',icon:'🗺️',label:'Fase de Grupos',desc:'Aprobaste las 5 fechas'},
+  {id:'campeon',icon:'🏆',label:'Campeón del Mundo',desc:'Perfecto en la Gran Final'},
+  {id:'contrarreloj',icon:'⚡',label:'Contrarreloj',desc:'Terminaste con tiempo de sobra'},
+  {id:'equipo',icon:'👥',label:'Juego en Equipo',desc:'Jugaste en modalidad equipo'},
+];
+const LS_LOGROS='mundial_nticx_logros';
+function getMisLogrosIds(){try{return JSON.parse(localStorage.getItem(LS_LOGROS)||'[]');}catch(e){return[];}}
+function unlockLogro(id){
+  const ids=getMisLogrosIds();
+  if(ids.includes(id))return false;
+  ids.push(id);
+  try{localStorage.setItem(LS_LOGROS,JSON.stringify(ids));}catch(e){}
+  const def=ACHIEVEMENTS.find(a=>a.id===id);
+  if(currentUser&&def){
+    // Guardado best-effort en el backend (requiere action:'saveLogro' en el Apps Script)
+    apiPost({action:'saveLogro',mail:currentUser.mail,nombre:currentUser.nombre,logroId:id,logroLabel:def.label,fecha:new Date().toLocaleDateString('es-AR')});
+  }
+  return true;
+}
+function evaluateLogros(){
+  const nuevos=[];
+  const{score,questions,temaId,answers}=quizState;
+  const total=questions.length;
+  if(unlockLogro('primer_gol'))nuevos.push('primer_gol');
+  let maxRacha=0,r=0;
+  answers.forEach(a=>{if(a){r++;maxRacha=Math.max(maxRacha,r);}else r=0;});
+  if(maxRacha>=3&&unlockLogro('goleador'))nuevos.push('goleador');
+  if(maxRacha>=5&&unlockLogro('crack'))nuevos.push('crack');
+  if(score===total&&unlockLogro('figura'))nuevos.push('figura');
+  if(temaId==='FINAL'&&score===total&&unlockLogro('campeon'))nuevos.push('campeon');
+  if(quizSecondsLeft>=180&&unlockLogro('contrarreloj'))nuevos.push('contrarreloj');
+  if(currentUser&&currentUser.integrantes&&currentUser.integrantes.length>1&&unlockLogro('equipo'))nuevos.push('equipo');
+  const scores=getLocalScores();
+  const grupales=TEMA_DEFS.filter(t=>t.id!=='FINAL');
+  const todasAprobadas=grupales.every(t=>{const b=scores[t.id];return b!=null&&(b/total)>=0.6;});
+  if(todasAprobadas&&unlockLogro('fase_grupos'))nuevos.push('fase_grupos');
+  return nuevos;
+}
+function showLogrosToast(ids){
+  if(!ids.length)return;
+  const toast=document.createElement('div');
+  toast.className='lp-toast';
+  toast.innerHTML=`<div class="lpt-title">🎉 ¡Nuevo${ids.length>1?'s':''} logro${ids.length>1?'s':''} desbloqueado${ids.length>1?'s':''}!</div>
+    ${ids.map(id=>{const d=ACHIEVEMENTS.find(a=>a.id===id);return`<div class="lpt-row"><span>${d.icon}</span><span>${d.label}</span></div>`;}).join('')}`;
+  document.body.appendChild(toast);
+  document.getElementById('fab-dot').classList.add('show');
+  setTimeout(()=>toast.remove(),4500);
+}
+
+let lpLiveTimer=null,lpLiveTab='mios';
+function toggleLogrosPanel(force){
+  const panel=document.getElementById('logros-panel');
+  const open=force!==undefined?force:!panel.classList.contains('open');
+  panel.classList.toggle('open',open);
+  if(open){
+    document.getElementById('fab-dot').classList.remove('show');
+    switchLogrosTab(lpLiveTab);
+  }else{
+    clearInterval(lpLiveTimer);
+  }
+}
+function switchLogrosTab(tab){
+  lpLiveTab=tab;
+  document.getElementById('lp-tab-mios').classList.toggle('active',tab==='mios');
+  document.getElementById('lp-tab-vivo').classList.toggle('active',tab==='vivo');
+  clearInterval(lpLiveTimer);
+  if(tab==='mios')renderMisLogros();
+  else renderLogrosVivoLogin();
+}
+function renderMisLogros(){
+  const ids=getMisLogrosIds();
+  document.getElementById('lp-body').innerHTML=`
+    <div class="lp-badge-grid">
+      ${ACHIEVEMENTS.map(a=>`
+        <div class="lp-badge ${ids.includes(a.id)?'earned':''}">
+          <div class="lb-icon">${a.icon}</div>
+          <div class="lb-label">${a.label}</div>
+          <div class="lb-desc">${a.desc}</div>
+        </div>`).join('')}
+    </div>`;
+}
+function renderLogrosVivoLogin(){
+  document.getElementById('lp-body').innerHTML=`
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:.7rem">Contraseña docente para ver el progreso en vivo de cada equipo.</div>
+    <div class="lp-live-pass">
+      <input type="password" id="lp-pass" placeholder="Contraseña docente" onkeydown="if(event.key==='Enter')startLogrosVivo()">
+      <button onclick="startLogrosVivo()">Ver →</button>
+    </div>
+    <div id="lp-live-err" style="color:var(--c5);font-size:.78rem;margin-top:.4rem;display:none">Contraseña incorrecta.</div>`;
+}
+async function startLogrosVivo(){
+  const pass=document.getElementById('lp-pass').value.trim();
+  document.getElementById('lp-body').innerHTML=`<div class="lp-live-empty">Cargando…</div>`;
+  const ok=await loadLogrosVivo(pass);
+  if(!ok){renderLogrosVivoLogin();document.getElementById('lp-live-err').style.display='block';return;}
+  lpLiveTimer=setInterval(()=>loadLogrosVivo(pass),15000);
+}
+async function loadLogrosVivo(pass){
+  try{
+    const data=await apiGet({action:'getAll',pass});
+    if(data.error)return false;
+    const puntajes=(data.puntajes||[]).slice(1);
+    const porEquipo={};
+    puntajes.forEach(r=>{
+      const mail=r[0],nombre=r[1],tema=r[2],puntaje=Number(r[3]),total=Number(r[4])||10;
+      if(!porEquipo[mail])porEquipo[mail]={nombre,total:0,temas:{}};
+      const pct=Math.round((puntaje/total)*100);
+      if(!porEquipo[mail].temas[tema]||porEquipo[mail].temas[tema].pct<pct){
+        porEquipo[mail].temas[tema]={pct,puntaje};
+      }
+    });
+    Object.values(porEquipo).forEach(e=>{e.total=Object.values(e.temas).reduce((s,t)=>s+t.puntaje,0);});
+    const equipos=Object.values(porEquipo).sort((a,b)=>b.total-a.total);
+    const body=document.getElementById('lp-body');
+    if(!body||lpLiveTab!=='vivo')return true;
+    if(!equipos.length){body.innerHTML='<div class="lp-live-empty">🏁 Todavía nadie jugó.</div>';return true;}
+    body.innerHTML=equipos.map(e=>`
+      <div class="lp-live-item">
+        <div class="lp-live-name"><span>${e.nombre}</span><span class="lp-live-pts">${e.total} pts</span></div>
+        <div class="lp-live-badges">
+          ${Object.entries(e.temas).map(([tema,t])=>`<span title="${tema}: ${t.pct}%">${getLogro(t.pct).medal||'▫️'}</span>`).join('')}
+        </div>
+      </div>`).join('')+'<div class="lp-live-refresh">🔄 Se actualiza solo cada 15s</div>';
+    return true;
+  }catch(e){return false;}
 }
 
 // [012] PRINT / PDF
