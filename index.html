@@ -287,6 +287,16 @@ a{color:inherit}
 @keyframes bounceIn{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
 #confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
 
+/* ── MINI RANKING EN VIVO (durante el partido) ── */
+.mini-rank-bar{display:flex;gap:.5rem;overflow-x:auto;padding:.7rem .1rem;margin:.2rem 0 .6rem;scrollbar-width:thin}
+.mini-rank-chip{flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.45rem .7rem;min-width:118px;font-size:.7rem}
+.mini-rank-chip.me{border-color:rgba(255,213,74,.5);background:rgba(255,213,74,.06)}
+.mini-rank-chip.live{border-color:rgba(74,222,128,.45);background:rgba(74,222,128,.06)}
+.mini-rank-chip .mrc-top{display:flex;align-items:center;justify-content:space-between;gap:.4rem;font-weight:800;font-family:var(--fh)}
+.mini-rank-chip .mrc-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
+.mini-rank-chip .mrc-pts{color:var(--c2)}
+.mini-rank-chip .mrc-stage{margin-top:.2rem;color:var(--c3);font-size:.65rem;white-space:nowrap}
+
 /* ── PANEL FLOTANTE DE LOGROS ── */
 .fab-logros{position:fixed;bottom:1.25rem;right:1.25rem;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--c1),var(--c2));border:none;box-shadow:0 8px 28px rgba(0,0,0,.45);font-size:1.5rem;cursor:pointer;z-index:6000;display:flex;align-items:center;justify-content:center;transition:transform .2s}
 .fab-logros:hover{transform:scale(1.07)}
@@ -414,6 +424,7 @@ a{color:inherit}
     <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
     <div class="prog-label" id="prog-label">Pregunta 1 de 10</div>
     <div class="streak-bar" id="streak-bar"></div>
+    <div class="mini-rank-bar" id="mini-rank-bar"></div>
     <div id="q-container"></div>
   </div>
 </div>
@@ -497,7 +508,7 @@ a{color:inherit}
   </div>
   <div class="lp-tabs">
     <button class="lp-tab active" id="lp-tab-mios" onclick="switchLogrosTab('mios')">🙋 Mis logros</button>
-    <button class="lp-tab" id="lp-tab-vivo" onclick="switchLogrosTab('vivo')">👩‍🏫 En vivo</button>
+    <button class="lp-tab" id="lp-tab-vivo" onclick="switchLogrosTab('vivo')">🏆 Posiciones en vivo</button>
   </div>
   <div class="lp-body" id="lp-body"></div>
 </div>
@@ -944,6 +955,8 @@ function startQuiz(temaId){
   startQuizTimer();
   startMusicForQuiz();
   renderQuestion();
+  startHeartbeat();
+  startMiniRank();
 }
 
 function startQuizTimer(){
@@ -1100,6 +1113,8 @@ function skipMidReminder(){
 function concludeQuiz(){
   clearInterval(quizTimerInterval);
   stopMusic();
+  stopHeartbeat();
+  stopMiniRank();
   if(!currentUser){
     const hoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
     pendingScore={tema:quizState.temaId,puntaje:quizState.score,total:quizState.questions.length,fecha:hoy};
@@ -1290,6 +1305,44 @@ async function loadDocente(){
 }
 
 // [011b] LOGROS / PANEL FLOTANTE EN VIVO
+let hbTimer=null;
+function sendHeartbeat(){
+  if(!currentUser||!quizState)return;
+  apiPost({action:'heartbeat',mail:currentUser.mail,nombre:currentUser.nombre,tema:quizState.temaId,pregunta:quizState.idx+1,total:quizState.questions.length,ts:Date.now()});
+}
+function startHeartbeat(){clearInterval(hbTimer);sendHeartbeat();hbTimer=setInterval(sendHeartbeat,8000);}
+function stopHeartbeat(){clearInterval(hbTimer);}
+
+let miniRankTimer=null;
+function startMiniRank(){clearInterval(miniRankTimer);loadMiniRank();miniRankTimer=setInterval(loadMiniRank,10000);}
+function stopMiniRank(){clearInterval(miniRankTimer);}
+async function loadMiniRank(){
+  const el=document.getElementById('mini-rank-bar');
+  if(!el)return;
+  try{
+    const data=await apiGet({action:'getRanking'});
+    const ranking=data.ranking||[];
+    if(!ranking.length){el.innerHTML='';return;}
+    el.innerHTML=ranking.slice(0,8).map((u,i)=>{
+      const isMe=currentUser&&u.mail===currentUser.mail;
+      const def=u.tema?TEMA_DEFS.find(t=>t.id===u.tema):null;
+      const stage=u.live?`🟢 ${def?def.icon+' '+def.label:u.tema} · P${u.pregunta}/${u.preguntaTotal||10}`:'';
+      return`<div class="mini-rank-chip${isMe?' me':''}${u.live?' live':''}">
+        <div class="mrc-top"><span>#${i+1}</span><span class="mrc-name">${u.nombre}</span><span class="mrc-pts">${u.total}</span></div>
+        ${stage?`<div class="mrc-stage">${stage}</div>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+function parseHeartbeatRow(row){
+  if(row&&typeof row==='object'&&!Array.isArray(row))return{mail:row.mail,nombre:row.nombre,tema:row.tema,pregunta:Number(row.pregunta),total:Number(row.total)||10,ts:row.ts};
+  if(Array.isArray(row))return{mail:row[0],nombre:row[1],tema:row[2],pregunta:Number(row[3]),total:Number(row[4])||10,ts:row[5]};
+  return null;
+}
+function esReciente(ts){
+  const t=typeof ts==='number'?ts:Date.parse(ts);
+  return t&&!isNaN(t)&&(Date.now()-t)<30000; // margen de 30s (heartbeat cada 8s)
+}
 const ACHIEVEMENTS=[
   {id:'primer_gol',icon:'⚽',label:'Primer Gol',desc:'Jugaste tu primer partido'},
   {id:'goleador',icon:'🔥',label:'Goleador',desc:'Racha de 3 correctas seguidas'},
@@ -1408,33 +1461,66 @@ async function loadLogrosVivo(pass){
       });
       if(mail)mapIntegrantes[mail]=integ;
     });
+    // Heartbeats: requiere que el backend soporte action:'heartbeat' y devuelva data.heartbeats
+    const hbRaw=data.heartbeats||[];
+    const hbRows=(hbRaw.length&&Array.isArray(hbRaw[0])&&typeof hbRaw[0][0]==='string'&&!/@/.test(hbRaw[0][0]||''))?hbRaw.slice(1):hbRaw;
+    const mapHb={};
+    hbRows.map(parseHeartbeatRow).filter(Boolean).forEach(h=>{
+      if(!h.mail)return;
+      const tPrev=mapHb[h.mail]?(typeof mapHb[h.mail].ts==='number'?mapHb[h.mail].ts:Date.parse(mapHb[h.mail].ts)):0;
+      const tNew=typeof h.ts==='number'?h.ts:Date.parse(h.ts);
+      if(!mapHb[h.mail]||tNew>tPrev)mapHb[h.mail]=h;
+    });
+    const hbSoportado=hbRaw.length>0;
+
     const porEquipo={};
     puntajes.forEach(r=>{
       const mail=r[0],nombre=r[1],tema=r[2],puntaje=Number(r[3]),total=Number(r[4])||10;
-      if(!porEquipo[mail])porEquipo[mail]={nombre,total:0,temas:{}};
+      if(!porEquipo[mail])porEquipo[mail]={mail,nombre,total:0,temas:{}};
       const pct=Math.round((puntaje/total)*100);
       if(!porEquipo[mail].temas[tema]||porEquipo[mail].temas[tema].pct<pct){
         porEquipo[mail].temas[tema]={pct,puntaje};
       }
     });
-    Object.entries(porEquipo).forEach(([mail,e])=>{
-      e.total=Object.values(e.temas).reduce((s,t)=>s+t.puntaje,0);
-      e.integrantes=(currentUser&&currentUser.mail===mail&&currentUser.integrantes.length>1)
-        ?currentUser.integrantes
-        :(mapIntegrantes[mail]||null);
+    // Incluir también a quienes están jugando su primer partido (aún sin puntaje guardado)
+    Object.values(mapHb).forEach(h=>{
+      if(!porEquipo[h.mail])porEquipo[h.mail]={mail:h.mail,nombre:h.nombre,total:0,temas:{}};
     });
-    const equipos=Object.values(porEquipo).sort((a,b)=>b.total-a.total);
+    Object.values(porEquipo).forEach(e=>{
+      e.total=Object.values(e.temas).reduce((s,t)=>s+t.puntaje,0);
+      e.integrantes=(currentUser&&currentUser.mail===e.mail&&currentUser.integrantes.length>1)
+        ?currentUser.integrantes
+        :(mapIntegrantes[e.mail]||null);
+      const hb=mapHb[e.mail];
+      e.live=!!(hb&&esReciente(hb.ts));
+      if(e.live){
+        const def=TEMA_DEFS.find(t=>t.id===hb.tema);
+        e.etapa=`${def?def.icon+' '+def.label:hb.tema} · Pregunta ${hb.pregunta}/${hb.total}`;
+      }
+    });
+    const equipos=Object.values(porEquipo).sort((a,b)=>(b.live-a.live)||(b.total-a.total));
     const body=document.getElementById('lp-body');
     if(!body||lpLiveTab!=='vivo')return true;
     if(!equipos.length){body.innerHTML='<div class="lp-live-empty">🏁 Todavía nadie jugó.</div>';return true;}
-    body.innerHTML=equipos.map(e=>`
-      <div class="lp-live-item">
-        <div class="lp-live-name"><span>${e.nombre}</span><span class="lp-live-pts">${e.total} pts</span></div>
+    const posIcons=['🥇','🥈','🥉'];
+    const rankOrdenado=[...equipos].sort((a,b)=>b.total-a.total);
+    body.innerHTML=equipos.map(e=>{
+      const pos=rankOrdenado.indexOf(e);
+      return`
+      <div class="lp-live-item" style="${e.live?'border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.06)':''}">
+        <div class="lp-live-name">
+          <span>${pos<3?posIcons[pos]+' ':''}${e.nombre}${e.live?' <span style="color:var(--c3);font-size:.68rem">🟢 en vivo</span>':''}</span>
+          <span class="lp-live-pts">${e.total} pts</span>
+        </div>
         ${e.integrantes&&e.integrantes.length>1?`<div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">👥 ${e.integrantes.join(', ')}</div>`:''}
+        ${e.live?`<div style="font-size:.72rem;color:var(--c3);margin-top:.25rem">⚽ ${e.etapa}</div>`:''}
         <div class="lp-live-badges">
           ${Object.entries(e.temas).map(([tema,t])=>`<span title="${tema}: ${t.pct}%">${getLogro(t.pct).medal||'▫️'}</span>`).join('')}
         </div>
-      </div>`).join('')+'<div class="lp-live-refresh">🔄 Se actualiza solo cada 15s</div>';
+      </div>`;
+    }).join('')
+      +(hbSoportado?'':'<div class="lp-live-refresh">ℹ️ El estado "en vivo" necesita que el backend guarde el heartbeat (ver nota para el docente)</div>')
+      +'<div class="lp-live-refresh">🔄 Se actualiza solo cada 15s</div>';
     return true;
   }catch(e){return false;}
 }
@@ -1504,7 +1590,7 @@ function showScreen(id){
   });
   window.scrollTo({top:0,behavior:'smooth'});
 }
-function goHome(){clearInterval(quizTimerInterval);stopMusic();renderHome();showScreen('home');}
+function goHome(){clearInterval(quizTimerInterval);stopHeartbeat();stopMiniRank();stopMusic();renderHome();showScreen('home');}
 
 loadSavedUser();
 renderHome();
