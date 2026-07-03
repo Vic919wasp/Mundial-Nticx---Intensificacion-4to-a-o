@@ -10,7 +10,7 @@
      Chat usa el mismo protocolo de mail).
      ============================================================
      ÍNDICE DE NAVEGACIÓN
-     [001] HEAD / META                     - línea 24 
+     [001] HEAD / META                     - línea 24
      [002] ESTILOS CSS                     - línea 31
      [003] HTML — PANTALLAS                - línea 360
      [004] BANCO DE PREGUNTAS (5 módulos)  - línea 470
@@ -696,7 +696,7 @@ function doStartTeam(){
   localStorage.setItem(LS_USER,JSON.stringify(currentUser));
   updateTopbar();
   // Registro en segundo plano, sin bloquear ni pedir confirmación
-  apiPost({action:'register',nombre:currentUser.nombre,mail:currentUser.mail,pass:'mundial'});
+  apiPost({action:'register',nombre:currentUser.nombre,mail:currentUser.mail,pass:'mundial',integrantes:currentUser.integrantes.join('|')});
   syncAllLocalScores();
   document.getElementById('auth-overlay').classList.remove('open');
   document.getElementById('auth-skip-mid').style.display='none';
@@ -1397,6 +1397,17 @@ async function loadLogrosVivo(pass){
     const data=await apiGet({action:'getAll',pass});
     if(data.error)return false;
     const puntajes=(data.puntajes||[]).slice(1);
+    const usuarios=(data.usuarios||[]).slice(1);
+    const mapIntegrantes={};
+    usuarios.forEach(row=>{
+      let mail=null,integ=null;
+      row.forEach(cell=>{
+        const s=String(cell||'');
+        if(!mail&&/@mundial\.nticx$/.test(s))mail=s;
+        if(!integ&&s.includes('|'))integ=s.split('|').map(x=>x.trim()).filter(Boolean);
+      });
+      if(mail)mapIntegrantes[mail]=integ;
+    });
     const porEquipo={};
     puntajes.forEach(r=>{
       const mail=r[0],nombre=r[1],tema=r[2],puntaje=Number(r[3]),total=Number(r[4])||10;
@@ -1406,7 +1417,12 @@ async function loadLogrosVivo(pass){
         porEquipo[mail].temas[tema]={pct,puntaje};
       }
     });
-    Object.values(porEquipo).forEach(e=>{e.total=Object.values(e.temas).reduce((s,t)=>s+t.puntaje,0);});
+    Object.entries(porEquipo).forEach(([mail,e])=>{
+      e.total=Object.values(e.temas).reduce((s,t)=>s+t.puntaje,0);
+      e.integrantes=(currentUser&&currentUser.mail===mail&&currentUser.integrantes.length>1)
+        ?currentUser.integrantes
+        :(mapIntegrantes[mail]||null);
+    });
     const equipos=Object.values(porEquipo).sort((a,b)=>b.total-a.total);
     const body=document.getElementById('lp-body');
     if(!body||lpLiveTab!=='vivo')return true;
@@ -1414,6 +1430,7 @@ async function loadLogrosVivo(pass){
     body.innerHTML=equipos.map(e=>`
       <div class="lp-live-item">
         <div class="lp-live-name"><span>${e.nombre}</span><span class="lp-live-pts">${e.total} pts</span></div>
+        ${e.integrantes&&e.integrantes.length>1?`<div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">👥 ${e.integrantes.join(', ')}</div>`:''}
         <div class="lp-live-badges">
           ${Object.entries(e.temas).map(([tema,t])=>`<span title="${tema}: ${t.pct}%">${getLogro(t.pct).medal||'▫️'}</span>`).join('')}
         </div>
