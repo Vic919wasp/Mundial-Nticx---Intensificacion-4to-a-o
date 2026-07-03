@@ -1,0 +1,1311 @@
+<!-- ============================================================
+     CONTEXTO: Intensificación NTICx 4° Año — "Mundial del Conocimiento"
+     Repaso/profundización ambientado al Mundial (sin fotos reales de
+     jugadores, solo estética albiceleste/pelota/copa/estrellas).
+     Preguntas basadas ÚNICAMENTE en nticx-401-1-junio.netlify.app
+     (5 módulos: Hardware, Software, Algoritmos, IA, ESI).
+     Login simple (individual o equipo, sin contraseña), timer de
+     10 min por partido, música tipo desafío, búho da contexto en
+     cada pregunta, compartir resultado por WhatsApp/Mail (Delta
+     Chat usa el mismo protocolo de mail).
+     ============================================================
+     ÍNDICE DE NAVEGACIÓN
+     [001] HEAD / META                     - línea 24
+     [002] ESTILOS CSS                     - línea 31
+     [003] HTML — PANTALLAS                - línea 360
+     [004] BANCO DE PREGUNTAS (5 módulos)  - línea 470
+     [005] CONFIG BACKEND                  - línea 560
+     [006] EQUIPO / LOGIN SIMPLE           - línea 580
+     [007] MÚSICA "DESAFÍO"                - línea 660
+     [008] QUIZ LOGIC + TIMER 10 MIN       - línea 720
+     [009] BÚHO SABIO (contexto x pregunta)- línea 900
+     [010] RESULTADO + COMPARTIR           - línea 1000
+     [011] RANKING LOGIC                   - línea 1150
+     [012] PRINT / PDF                     - línea 1300
+     [013] NAVEGACIÓN / INIT               - línea 1380
+     ============================================================ -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<!-- [001] HEAD -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>🏆 Mundial NTICx — Intensificación 4° Año</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- [002] ESTILOS -->
+<style>
+:root{
+  --bg:#070c1f;--surface:#0d1638;--card:#121f4a;--card2:#1a2c5e;
+  --border:rgba(255,255,255,0.09);--text:#eaf0ff;--muted:#8ea0c9;
+  --c1:#6cace4;--c2:#ffd54a;--c3:#4ade80;--c4:#ffab2e;--c5:#ff5a7a;
+  --c1d:rgba(108,172,228,.14);--c2d:rgba(255,213,74,.14);
+  --c3d:rgba(74,222,128,.14);--c4d:rgba(255,171,46,.14);--c5d:rgba(255,90,122,.14);
+  --radius:14px;--fh:'Syne',sans-serif;--fb:'Nunito',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:
+  radial-gradient(circle at 15% 0%,rgba(108,172,228,.10),transparent 40%),
+  radial-gradient(circle at 85% 10%,rgba(255,213,74,.08),transparent 35%),
+  var(--bg);
+  color:var(--text);font-family:var(--fb);line-height:1.6;min-height:100vh}
+.screen{display:none}.screen.active{display:block}
+a{color:inherit}
+
+/* ── SOL DECORATIVO (genérico, no escudo) ── */
+.sun-deco{position:fixed;top:-120px;right:-120px;width:280px;height:280px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,213,74,.18),transparent 70%);pointer-events:none;z-index:0}
+
+/* ── TOPBAR ── */
+.user-topbar{background:var(--surface);border-bottom:2px solid var(--c1);padding:.6rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;position:relative;z-index:2}
+.user-info{display:flex;align-items:center;gap:.6rem;min-width:0}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--c1),var(--c2));display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-weight:800;font-size:.9rem;color:#0a1128;flex-shrink:0}
+.user-name{font-family:var(--fh);font-weight:800;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:44vw}
+.user-mail{font-size:.7rem;color:var(--muted)}
+.topbar-btns{display:flex;gap:.5rem;flex-wrap:wrap}
+.tb-btn{background:var(--card);border:1px solid var(--border);border-radius:99px;padding:.35rem .85rem;font-size:.75rem;font-weight:700;color:var(--text);cursor:pointer;font-family:var(--fh);transition:all .2s}
+.tb-btn:hover{background:var(--card2)}
+.tb-btn.ranking{color:var(--c4);border-color:rgba(255,171,46,.3)}
+.tb-btn.logout{color:var(--c5);border-color:rgba(255,90,122,.2)}
+.tb-btn.login-cta{color:var(--c1);border-color:rgba(108,172,228,.4)}
+
+/* ── HOME ── */
+.home-wrap{max-width:900px;margin:0 auto;padding:2rem 1rem 4rem;position:relative;z-index:1}
+.home-hero{text-align:center;padding:2rem 1rem 1.25rem}
+.trophy-big{font-size:3rem;animation:trophyFloat 3s ease-in-out infinite}
+@keyframes trophyFloat{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(4deg)}}
+.home-hero h1{font-family:var(--fh);font-size:2.1rem;font-weight:800;letter-spacing:-.03em;margin:.4rem 0 .3rem}
+.home-hero h1 span{color:var(--c2)}
+.home-hero p{color:var(--muted);font-size:.92rem;max-width:540px;margin:0 auto 1.25rem}
+.rules-bar{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.75rem}
+.rule-chip{background:var(--card);border:1px solid var(--border);border-radius:99px;padding:.4rem .9rem;font-size:.76rem;color:var(--muted);display:flex;align-items:center;gap:.35rem}
+.rule-chip strong{color:var(--text)}
+.temas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.9rem}
+.tema-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:1.5rem 1rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.tema-card:hover{transform:translateY(-4px)}
+.tema-card .t-icon{font-size:2.1rem;margin-bottom:.5rem}
+.tema-card .t-label{font-family:var(--fh);font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
+.tema-card .t-sub{font-size:.73rem;color:var(--muted);margin-top:.3rem}
+.tema-card .t-badge{position:absolute;top:.55rem;right:.55rem;font-size:.65rem;font-weight:800;padding:.2rem .5rem;border-radius:99px;text-transform:uppercase}
+.t0{border-color:rgba(108,172,228,.35)}.t0:hover{background:var(--c1d);border-color:var(--c1)}.t0 .t-label{color:var(--c1)}
+.t1{border-color:rgba(255,213,74,.35)}.t1:hover{background:var(--c2d);border-color:var(--c2)}.t1 .t-label{color:var(--c2)}
+.t2{border-color:rgba(74,222,128,.35)}.t2:hover{background:var(--c3d);border-color:var(--c3)}.t2 .t-label{color:var(--c3)}
+.t3{border-color:rgba(255,171,46,.35)}.t3:hover{background:var(--c4d);border-color:var(--c4)}.t3 .t-label{color:var(--c4)}
+.t4{border-color:rgba(255,90,122,.35)}.t4:hover{background:var(--c5d);border-color:var(--c5)}.t4 .t-label{color:var(--c5)}
+.t5{border-color:rgba(255,213,74,.6);background:linear-gradient(160deg,rgba(255,213,74,.10),rgba(108,172,228,.08))}.t5:hover{border-color:var(--c2)}.t5 .t-label{color:var(--c2)}
+.done-badge{background:rgba(74,222,128,.2);color:#4ade80;border:1px solid rgba(74,222,128,.4)}
+.jersey{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:6px;background:repeating-linear-gradient(180deg,#75AADB 0 6px,#fff 6px 12px);color:#0a1128;font-family:var(--fh);font-weight:800;font-size:.72rem;margin-bottom:.3rem}
+.mod-names-bar{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-bottom:1.5rem}
+.mod-chip{background:var(--card2);border:1px solid var(--border);border-radius:99px;padding:.3rem .8rem;font-size:.74rem;color:var(--muted)}
+.export-all-btn{background:linear-gradient(135deg,var(--c1),var(--c2));border:none;border-radius:99px;padding:.75rem 1.75rem;color:#0a1128;font-family:var(--fh);font-weight:800;font-size:.88rem;cursor:pointer;transition:opacity .2s;box-shadow:0 4px 24px rgba(108,172,228,.25)}
+.export-all-btn:hover{opacity:.88}
+.tema-card .print-btn{display:inline-flex;align-items:center;gap:.3rem;margin-top:.55rem;font-size:.68rem;font-weight:700;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:99px;padding:.25rem .7rem;color:var(--muted);cursor:pointer;transition:all .2s;font-family:var(--fb)}
+.tema-card .print-btn:hover{background:rgba(255,255,255,.14);color:var(--text)}
+
+/* ── QUIZ ── */
+.quiz-wrap{max-width:740px;margin:0 auto;padding:1.25rem 1rem 3rem;position:relative;z-index:1}
+.quiz-topbar{display:flex;align-items:center;gap:.7rem;margin-bottom:.9rem;flex-wrap:wrap}
+.back-btn{background:var(--card);border:1px solid var(--border);border-radius:9px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;flex-shrink:0}
+.back-btn:hover{background:var(--card2)}
+.quiz-title{font-family:var(--fh);font-weight:800;font-size:.95rem;flex:1;min-width:100px}
+.quiz-score-live{font-family:var(--fh);font-weight:800;font-size:.88rem;color:var(--c4)}
+.timer-chip{font-family:var(--fh);font-weight:800;font-size:.85rem;background:var(--card);border:1.5px solid var(--c1);border-radius:99px;padding:.25rem .7rem;display:flex;align-items:center;gap:.3rem;transition:all .3s}
+.timer-chip.warn{border-color:var(--c4);color:var(--c4)}
+.timer-chip.danger{border-color:var(--c5);color:var(--c5);animation:pulseWarn 1s infinite}
+@keyframes pulseWarn{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.music-btn{background:var(--card);border:1px solid var(--border);border-radius:99px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;flex-shrink:0}
+.music-btn.on{border-color:var(--c2);color:var(--c2)}
+.prog-bar{height:8px;background:var(--card);border-radius:99px;overflow:hidden;margin-bottom:.3rem}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:99px;transition:width .4s ease;width:0%}
+.prog-label{font-size:.75rem;color:var(--muted);font-weight:700;margin-bottom:.85rem}
+.streak-bar{display:flex;gap:.3rem;margin-bottom:.9rem;flex-wrap:wrap}
+.streak-dot{width:14px;height:14px;border-radius:50%;background:var(--card2);border:2px solid var(--border);transition:all .3s}
+.streak-dot.ok{background:var(--c3);border-color:var(--c3);box-shadow:0 0 6px rgba(74,222,128,.5)}
+.streak-dot.ko{background:var(--c5);border-color:var(--c5)}
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.65rem}
+.q-mod{font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.55rem;font-family:var(--fh)}
+.q-num-badge{display:inline-block;font-family:var(--fh);font-size:.68rem;font-weight:800;background:var(--card2);border-radius:99px;padding:.15rem .6rem;margin-bottom:.55rem;color:var(--muted)}
+.q-text{font-family:var(--fh);font-size:1.03rem;font-weight:700;line-height:1.5;margin-bottom:1.2rem}
+.opts{display:grid;gap:.55rem}
+.opt{display:block;width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:.72rem 1rem;color:#c8d3f0;font-family:var(--fb);font-size:.9rem;cursor:pointer;transition:all .18s}
+.opt:hover:not(:disabled){background:#22376e;border-color:rgba(255,255,255,.2)}
+.opt.correct{background:rgba(74,222,128,.15);border-color:#4ade80;color:#4ade80;font-weight:700}
+.opt.wrong{background:rgba(255,90,122,.12);border-color:#ff5a7a;color:#ff5a7a}
+.opt:disabled{cursor:default}
+.opt-letter{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.08);font-size:.72rem;font-weight:800;margin-right:.6rem;flex-shrink:0;font-family:var(--fh)}
+.feedback{margin-top:.85rem;font-size:.86rem;padding:.65rem .9rem;border-radius:8px;display:none;line-height:1.5}
+.feedback.show{display:block}
+.feedback.ok{background:rgba(74,222,128,.1);color:#4ade80}
+.feedback.ko{background:rgba(255,90,122,.1);color:#ff9ab0}
+.next-btn{margin-top:1rem;background:var(--c2);border:none;border-radius:99px;padding:.65rem 1.75rem;color:#0a1128;font-family:var(--fh);font-weight:800;font-size:.88rem;cursor:pointer}
+.next-btn:hover{opacity:.85}
+.combo-flash{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--fh);font-size:2.6rem;font-weight:800;pointer-events:none;z-index:9000;animation:comboAnim .8s ease forwards;text-shadow:0 0 30px currentColor;text-align:center;width:90vw}
+@keyframes comboAnim{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+
+/* ── BÚHO ── */
+.buho-flotante-wrap{max-width:340px}
+
+/* ── RESULT ── */
+.result-wrap{max-width:700px;margin:0 auto;padding:1.75rem 1rem 4rem;position:relative;z-index:1}
+.result-card{background:var(--card);border:2px solid var(--c2);border-radius:var(--radius);padding:2.25rem 1.75rem;text-align:center;position:relative;overflow:hidden}
+.result-card.champion{border-color:var(--c2);box-shadow:0 0 60px rgba(255,213,74,.25)}
+.result-emoji{font-size:4.5rem;margin-bottom:.4rem;animation:bounceIn .6s ease}
+.result-title{font-family:var(--fh);font-size:1.7rem;font-weight:800;margin-bottom:.35rem;line-height:1.25}
+.score-display{margin:.4rem 0}
+.score-num{font-family:var(--fh);font-size:4.2rem;font-weight:800;letter-spacing:-.05em}
+.score-den{font-family:var(--fh);font-size:1.9rem;color:var(--muted)}
+.stars{font-size:2.1rem;margin:.4rem 0 1rem;letter-spacing:.15em}
+.result-msg{font-size:.95rem;color:#c8d3f0;margin-bottom:1.4rem}
+.breakdown{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:left;margin-bottom:1rem}
+.breakdown-title{font-family:var(--fh);font-size:.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.7rem}
+.brow{display:flex;align-items:center;gap:.75rem;padding:.4rem 0;border-top:1px solid var(--border);font-size:.85rem}
+.brow:first-of-type{border-top:none}
+.brow-name{flex:1;font-weight:600}
+.brow-score{font-family:var(--fh);font-weight:800;font-size:.86rem}
+.brow-bar-wrap{width:70px;background:var(--card);border-radius:99px;height:6px;overflow:hidden;flex-shrink:0}
+.brow-bar{height:100%;border-radius:99px;transition:width .6s ease}
+.review-box{background:rgba(255,171,46,.06);border:1px solid rgba(255,171,46,.2);border-radius:10px;padding:1rem;text-align:left;margin-bottom:1.2rem}
+.review-title{font-family:var(--fh);font-size:.8rem;font-weight:800;color:var(--c4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem}
+.review-item{font-size:.86rem;color:#c8d3f0;padding:.2rem 0}
+.review-item::before{content:"👉 ";color:var(--c4)}
+.best-row{display:flex;justify-content:center;gap:1.4rem;margin-bottom:1.4rem;flex-wrap:wrap}
+.best-chip{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:.6rem 1rem;font-size:.8rem;text-align:center}
+.best-chip strong{display:block;font-family:var(--fh);font-size:1.1rem;font-weight:800;color:var(--c2)}
+.result-btns{display:flex;gap:.65rem;justify-content:center;flex-wrap:wrap}
+.btn-retry{background:var(--c2);border:none;border-radius:99px;padding:.7rem 1.6rem;color:#0a1128;font-family:var(--fh);font-weight:800;font-size:.88rem;cursor:pointer}
+.btn-retry:hover{opacity:.85}
+.btn-home{background:var(--card2);border:1.5px solid var(--border);border-radius:99px;padding:.7rem 1.6rem;color:var(--text);font-family:var(--fh);font-weight:700;font-size:.88rem;cursor:pointer}
+.btn-home:hover{background:var(--card)}
+.share-box{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.2rem}
+.share-title{font-family:var(--fh);font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.7rem}
+.share-btns{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
+.share-btn{border:none;border-radius:99px;padding:.6rem 1.1rem;font-family:var(--fh);font-weight:800;font-size:.82rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;text-decoration:none}
+.share-btn.wa{background:#25D366;color:#06210f}
+.share-btn.mail{background:var(--c1);color:#0a1128}
+.share-btn:hover{opacity:.88}
+
+/* ── EQUIPO MODAL (login simple) ── */
+.auth-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:8000;align-items:center;justify-content:center;padding:1.5rem;backdrop-filter:blur(8px)}
+.auth-overlay.open{display:flex}
+.auth-box{background:var(--card);border:2px solid var(--c1);border-radius:20px;padding:2.25rem 1.75rem;max-width:440px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.6);position:relative;max-height:90vh;overflow-y:auto}
+.auth-logo{font-size:2.6rem;text-align:center;margin-bottom:.6rem}
+.auth-title{font-family:var(--fh);font-size:1.4rem;font-weight:800;text-align:center;margin-bottom:.3rem}
+.auth-title span{color:var(--c2)}
+.auth-sub{font-size:.82rem;color:var(--muted);text-align:center;margin-bottom:1.5rem;line-height:1.5}
+.auth-tabs{display:flex;background:var(--card2);border-radius:99px;padding:.25rem;margin-bottom:1.4rem;gap:.25rem}
+.auth-tab{flex:1;text-align:center;padding:.45rem;border-radius:99px;font-family:var(--fh);font-size:.8rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .2s;border:none;background:none}
+.auth-tab.active{background:var(--c1);color:#0a1128}
+.auth-field{margin-bottom:.9rem}
+.auth-field label{display:block;font-size:.73rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;font-family:var(--fh)}
+.auth-field input,.auth-field textarea{width:100%;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:.7rem 1rem;color:var(--text);font-family:var(--fb);font-size:.9rem;outline:none;transition:border-color .2s;resize:vertical}
+.auth-field input:focus,.auth-field textarea:focus{border-color:var(--c1)}
+.auth-hint{font-size:.7rem;color:var(--muted);margin-top:.3rem}
+.auth-btn{width:100%;background:linear-gradient(135deg,var(--c1),var(--c2));border:none;border-radius:99px;padding:.85rem;color:#0a1128;font-family:var(--fh);font-weight:800;font-size:.92rem;cursor:pointer;margin-top:.4rem;transition:opacity .2s}
+.auth-btn:hover{opacity:.88}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed}
+.auth-msg{padding:.6rem .9rem;border-radius:8px;font-size:.82rem;margin-top:.75rem;display:none;line-height:1.5}
+.auth-msg.show{display:block}
+.auth-msg.error{background:rgba(255,90,122,.1);color:var(--c5);border:1px solid rgba(255,90,122,.25)}
+
+/* ── RANKING MODAL ── */
+.ranking-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:5000;overflow-y:auto;padding:2rem 1rem;backdrop-filter:blur(6px)}
+.ranking-overlay.open{display:block}
+.ranking-modal{background:var(--card);border:1px solid var(--border);border-radius:20px;max-width:700px;margin:0 auto;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+.ranking-header{background:linear-gradient(135deg,rgba(108,172,228,.2),rgba(255,213,74,.15));border-bottom:1px solid var(--border);padding:1.5rem 1.75rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.ranking-header h2{font-family:var(--fh);font-size:1.15rem;font-weight:800}
+.ranking-tabs{display:flex;gap:.5rem}
+.rtab{background:var(--card2);border:1px solid var(--border);border-radius:99px;padding:.35rem .9rem;font-size:.74rem;font-weight:700;color:var(--muted);cursor:pointer;font-family:var(--fh);transition:all .2s}
+.rtab.active{background:var(--c2);color:#0a1128;border-color:var(--c2)}
+.ranking-close{background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:99px;padding:.35rem .85rem;font-size:.74rem;font-weight:700;color:var(--text);cursor:pointer;font-family:var(--fh)}
+.ranking-body{padding:1.5rem}
+.top10-list{display:flex;flex-direction:column;gap:.6rem}
+.top10-item{display:flex;align-items:center;gap:.9rem;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem}
+.top10-item.me{border-color:rgba(255,213,74,.4);background:rgba(255,213,74,.06)}
+.top10-pos{font-family:var(--fh);font-weight:800;font-size:1.1rem;width:28px;text-align:center;flex-shrink:0}
+.top10-pos.gold{color:#ffd700}.top10-pos.silver{color:#c0c0c0}.top10-pos.bronze{color:#cd7f32}
+.top10-name{flex:1;font-weight:700;font-size:.88rem}
+.top10-sub{font-size:.71rem;color:var(--muted);margin-top:.1rem}
+.top10-pts{font-family:var(--fh);font-weight:800;font-size:1rem;color:var(--c2)}
+.ranking-empty{text-align:center;padding:2.5rem;color:var(--muted);font-size:.9rem}
+.rk-spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--c2);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:.75rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ranking-loading{text-align:center;padding:2rem;color:var(--muted)}
+.doc-table-wrap{overflow-x:auto;margin-top:.5rem}
+.doc-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.doc-table th{background:var(--card2);color:var(--muted);font-family:var(--fh);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;padding:.6rem .75rem;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.doc-table td{padding:.55rem .75rem;border-bottom:1px solid var(--border);color:var(--text)}
+.doc-stat-row{display:flex;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap}
+.doc-stat{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;flex:1;min-width:100px;text-align:center}
+.doc-stat strong{display:block;font-family:var(--fh);font-size:1.35rem;font-weight:800;color:var(--c2)}
+.doc-stat span{font-size:.71rem;color:var(--muted)}
+.doc-pass-wrap{display:flex;gap:.6rem;margin-bottom:1rem}
+.doc-pass-wrap input{flex:1;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:.6rem .9rem;color:var(--text);font-family:var(--fb);font-size:.86rem;outline:none}
+.doc-pass-wrap button{background:var(--c1);border:none;border-radius:10px;padding:.6rem 1.1rem;color:#0a1128;font-family:var(--fh);font-weight:700;font-size:.8rem;cursor:pointer}
+
+/* ── BÚHO SABIO ── */
+.buho-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.9rem}
+.buho-emoji{font-size:3.2rem;display:block;animation:buhoFloat 2.5s ease-in-out infinite}
+@keyframes buhoFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}}
+@keyframes buhoEntrada{from{transform:translateY(60px) scale(.8);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+@keyframes slideUpBuho{from{transform:translateY(80px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes slideInCard{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.print-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;overflow-y:auto;padding:2rem 1rem;backdrop-filter:blur(4px)}
+.print-overlay.open{display:block}
+.print-modal{background:#fff;color:#111;max-width:720px;margin:0 auto;border-radius:12px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.print-modal-header{background:#0a1128;color:#fff;padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.print-modal-title{font-family:var(--fh);font-size:1.05rem;font-weight:800}
+.print-modal-actions{display:flex;gap:.6rem;flex-shrink:0}
+.pm-btn{border:none;border-radius:99px;padding:.5rem 1.1rem;font-family:var(--fh);font-weight:700;font-size:.8rem;cursor:pointer}
+.pm-btn-print{background:var(--c2);color:#0a1128}
+.pm-btn-close{background:rgba(255,255,255,.12);color:#fff}
+.print-modal-body{padding:1.5rem}
+.pc-header{text-align:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:2px solid #e0e0e0}
+.pc-header h2{font-family:var(--fh);font-size:1.3rem;font-weight:800;color:#0a1128;margin-bottom:.25rem}
+.pc-header p{font-size:.8rem;color:#666}
+.pc-meta{display:flex;justify-content:center;gap:1.5rem;margin-top:.75rem;flex-wrap:wrap}
+.pc-meta span{font-size:.74rem;color:#888}
+.pc-mod-section{margin-bottom:1.25rem}
+.pc-mod-label{font-family:var(--fh);font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#888;margin-bottom:.6rem;padding-bottom:.3rem;border-bottom:1px solid #eee}
+.pc-q{margin-bottom:1rem;page-break-inside:avoid}
+.pc-q-text{font-family:var(--fh);font-size:.88rem;font-weight:700;color:#0a1128;margin-bottom:.45rem;line-height:1.45}
+.pc-q-num{color:#999;font-weight:600;margin-right:.3rem;font-size:.83rem}
+.pc-opts{display:grid;grid-template-columns:1fr 1fr;gap:.25rem .75rem}
+.pc-opt{font-size:.78rem;color:#333;display:flex;align-items:flex-start;gap:.4rem;line-height:1.35}
+.pc-opt-letter{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid #ccc;font-size:.6rem;font-weight:800;flex-shrink:0;margin-top:1px;color:#666}
+.pc-answer-key{margin-top:1.5rem;padding-top:1rem;border-top:2px dashed #ddd}
+.pc-answer-key h3{font-family:var(--fh);font-size:.8rem;font-weight:800;color:#0a1128;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.05em}
+.pc-answers-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:.4rem}
+.pc-ans-item{background:#f4f4f8;border-radius:6px;padding:.35rem .4rem;text-align:center}
+.pc-ans-item .an{font-weight:800;color:#0a1128;font-family:var(--fh);font-size:.68rem}
+.pc-ans-item .av{color:#444;font-size:.63rem;margin-top:.1rem}
+.pc-footer{margin-top:1rem;text-align:center;font-size:.68rem;color:#aaa}
+
+/* ── CONFETTI ── */
+.confetti-piece{position:absolute;top:-20px;animation:confettiFall linear forwards}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}90%{opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+@keyframes bounceIn{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+#confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
+
+@media(max-width:600px){
+  .home-hero h1{font-size:1.5rem}
+  .temas-grid{grid-template-columns:1fr 1fr}
+  .tema-card{padding:1rem .65rem}
+  .score-num{font-size:3.3rem}
+  .result-card{padding:1.5rem 1rem}
+  .auth-box{padding:1.5rem 1.1rem}
+  .ranking-tabs{flex-wrap:wrap}
+  .quiz-title{font-size:.82rem}
+  .user-name{max-width:34vw}
+  .buho-flotante-wrap{max-width:calc(100vw - 2rem)}
+  .share-btns{flex-direction:column}
+  .share-btn{justify-content:center}
+}
+@media(max-width:380px){
+  .rules-bar .rule-chip{font-size:.68rem;padding:.32rem .65rem}
+  .doc-stat{min-width:80px}
+}
+@media print{
+  body>*:not(.print-overlay){display:none !important}
+  .print-overlay{display:block !important;position:static !important;background:none !important;padding:0 !important;backdrop-filter:none !important}
+  .print-modal{box-shadow:none !important;border-radius:0 !important;max-width:100% !important}
+  .print-modal-header{display:none !important}
+  .print-modal-body{padding:.5cm !important}
+  .pc-q{page-break-inside:avoid;break-inside:avoid}
+  .pc-tema-block{display:block;page-break-after:always !important;break-after:page !important}
+  .pc-tema-block:last-child{page-break-after:auto !important;break-after:auto !important}
+}
+</style>
+</head>
+<body>
+
+<!-- [003] HTML — PANTALLAS -->
+<div class="sun-deco"></div>
+<div id="confetti-container"></div>
+
+<!-- TOPBAR -->
+<div class="user-topbar" id="user-topbar">
+  <div class="user-info">
+    <div class="user-avatar" id="user-avatar">⚽</div>
+    <div>
+      <div class="user-name" id="user-name-display">Sin equipo</div>
+      <div class="user-mail" id="user-mail-display">Anotate para guardar tus goles</div>
+    </div>
+  </div>
+  <div class="topbar-btns" id="topbar-btns">
+    <button class="tb-btn ranking" onclick="openRanking()">🏆 Tabla de posiciones</button>
+    <button class="tb-btn login-cta" id="btn-login-cta" onclick="openAuth()">⚽ Anotar mi equipo</button>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="home-wrap">
+    <div class="home-hero">
+      <div class="trophy-big">🏆</div>
+      <h1>Mundial <span>NTICx</span> — Intensificación 4° Año</h1>
+      <p>Actividad de <strong>intensificación</strong> para profundizar los temas que más te costaron. Elegí una fecha, respondé antes de que se acabe el tiempo y llegá a la Gran Final. ⚽🇦🇷</p>
+      <div class="rules-bar">
+        <div class="rule-chip">📋 <strong>5 fechas + 1 Final</strong></div>
+        <div class="rule-chip">⏱️ <strong>10 min máx.</strong> por partido</div>
+        <div class="rule-chip">🦉 <strong>Ayuda del Búho</strong> en cada pregunta</div>
+        <div class="rule-chip">☁️ <strong>Tabla en vivo</strong></div>
+      </div>
+    </div>
+    <div class="mod-names-bar">
+      <div class="mod-chip">🖥️ Hardware / Von Neumann</div>
+      <div class="mod-chip">💾 Software</div>
+      <div class="mod-chip">🔢 Algoritmos</div>
+      <div class="mod-chip">🤖 Inteligencia Artificial</div>
+      <div class="mod-chip">🛡️ ESI y Convivencia Digital</div>
+    </div>
+    <div class="temas-grid" id="temas-grid"></div>
+    <div style="text-align:center;margin-top:1.75rem">
+      <button class="export-all-btn" onclick="openPrintAll()">🖨️ Exportar todas las fechas a PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-wrap">
+    <div class="quiz-topbar">
+      <div class="back-btn" onclick="goHome()">←</div>
+      <div class="quiz-title" id="quiz-title">Fecha 1</div>
+      <div class="timer-chip" id="timer-chip">⏱️ 10:00</div>
+      <button class="music-btn" id="music-btn" onclick="toggleMusic()" title="Música">🔊</button>
+      <div class="quiz-score-live" id="quiz-score-live">0 pts</div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+    <div class="prog-label" id="prog-label">Pregunta 1 de 10</div>
+    <div class="streak-bar" id="streak-bar"></div>
+    <div id="q-container"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+  <div class="result-wrap">
+    <div class="result-card" id="result-card"></div>
+  </div>
+</div>
+
+<!-- EQUIPO MODAL (login simple, sin contraseña) -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">⚽🇦🇷</div>
+    <div class="auth-title">Anotá tu <span>Selección</span></div>
+    <div class="auth-sub" id="auth-sub">Sin contraseña, sin vueltas. Poné tu nombre (o el de tu equipo) y arrancamos.</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-ind" onclick="switchAuthTab('individual')">🙋 Individual</button>
+      <button class="auth-tab" id="tab-equipo" onclick="switchAuthTab('equipo')">👥 Equipo</button>
+    </div>
+    <!-- INDIVIDUAL -->
+    <div id="form-individual">
+      <div class="auth-field"><label>Nombre y apellido</label><input type="text" id="ind-nombre" placeholder="Ej: Lionel Messi"></div>
+    </div>
+    <!-- EQUIPO -->
+    <div id="form-equipo" style="display:none">
+      <div class="auth-field"><label>Nombre del equipo</label><input type="text" id="eq-nombre" placeholder="Ej: Los Albicelestes"></div>
+      <div class="auth-field">
+        <label>Integrantes (nombre y apellido)</label>
+        <textarea id="eq-integrantes" rows="3" placeholder="Un integrante por línea:&#10;Ana Pérez&#10;Juan Gómez"></textarea>
+        <div class="auth-hint">Escribí nombre y apellido de cada integrante, uno por renglón.</div>
+      </div>
+    </div>
+    <button class="auth-btn" id="btn-start" onclick="doStartTeam()">⚽ ¡A jugar! →</button>
+    <div class="auth-msg" id="auth-msg"></div>
+    <span id="auth-skip-mid" onclick="skipMidReminder()" style="display:none;text-align:center;margin-top:.9rem;font-size:.76rem;color:var(--muted);cursor:pointer;text-decoration:underline">Después — seguir jugando sin anotarme</span>
+  </div>
+</div>
+
+<!-- RANKING MODAL -->
+<div class="ranking-overlay" id="ranking-overlay" onclick="if(event.target===this)closeRanking()">
+  <div class="ranking-modal">
+    <div class="ranking-header">
+      <h2>🏆 Tabla de posiciones — Mundial NTICx</h2>
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+        <div class="ranking-tabs">
+          <button class="rtab active" id="tab-top10" onclick="switchRankTab('top10')">🥇 Top 10</button>
+          <button class="rtab" id="tab-docente" onclick="switchRankTab('docente')">👩‍🏫 Docente</button>
+        </div>
+        <button class="ranking-close" onclick="closeRanking()">✕ Cerrar</button>
+      </div>
+    </div>
+    <div class="ranking-body">
+      <div id="tab-top10-content"></div>
+      <div id="tab-docente-content" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT MODAL -->
+<div class="print-overlay" id="print-overlay" onclick="if(event.target===this)closePrint()">
+  <div class="print-modal">
+    <div class="print-modal-header">
+      <div class="print-modal-title" id="pm-title">Vista previa</div>
+      <div class="print-modal-actions">
+        <button class="pm-btn pm-btn-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
+        <button class="pm-btn pm-btn-close" onclick="closePrint()">✕</button>
+      </div>
+    </div>
+    <div class="print-modal-body" id="pm-body"></div>
+  </div>
+</div>
+
+<!-- [004] BANCO DE PREGUNTAS — basado SOLO en nticx-401-1-junio.netlify.app -->
+<script>
+const MODS={
+  i1:'🖥️ Hardware / Von Neumann',
+  i2:'💾 Software',
+  i3:'🔢 Algoritmos',
+  i4:'🤖 Inteligencia Artificial',
+  i5:'🛡️ ESI y Convivencia Digital'
+};
+
+const BANK=[
+// ── i1: HARDWARE / VON NEUMANN ─────────────────────────────
+{mod:'i1',hint:'💡 Fue un matemático que en 1945 propuso que el programa y los datos vivan juntos en la misma memoria.',q:'¿Quién propuso el modelo de arquitectura que usan la mayoría de las computadoras actuales, y cuándo?',opts:['Alan Turing, 1950','John von Neumann, 1945','John McCarthy, 1956','Bill Gates, 1975'],ans:1},
+{mod:'i1',hint:'💡 Antes de este modelo, programa y datos se guardaban por separado. La idea central es guardarlos juntos.',q:'¿Cuál es la idea central del modelo Von Neumann?',opts:['Que la computadora funcione sin electricidad','Que el programa y los datos se almacenen juntos en la misma memoria','Que cada periférico tenga su propia CPU','Que no haga falta memoria RAM'],ans:1},
+{mod:'i1',hint:'💡 Son 4 grandes bloques: el que procesa, el que guarda, el que ingresa datos y el que los muestra.',q:'¿Cuáles son los 4 componentes principales de la arquitectura Von Neumann?',opts:['CPU, Memoria, Entrada y Salida','Teclado, Mouse, Monitor y Parlantes','RAM, ROM, Caché y Registros','Software, Hardware, Firmware y Datos'],ans:0},
+{mod:'i1',hint:'💡 Son como las "rutas" por donde viajan los datos entre los distintos componentes de la compu.',q:'¿Qué son los buses en una computadora?',opts:['Programas para transportar archivos','Canales de comunicación entre los componentes','Un tipo de memoria RAM','Periféricos de entrada'],ans:1},
+{mod:'i1',hint:'💡 Dentro de la CPU hay una parte que hace cuentas y compara valores (mayor, menor, igual).',q:'¿Qué unidad de la CPU realiza las operaciones matemáticas y lógicas?',opts:['La Unidad de Control','La ALU (Unidad Aritmético-Lógica)','La memoria ROM','El bus de datos'],ans:1},
+{mod:'i1',hint:'💡 Esta unidad no calcula: dirige. Lee la instrucción y le dice al resto de la CPU qué hacer y cuándo.',q:'¿Qué función cumple la Unidad de Control (UC)?',opts:['Guarda archivos permanentemente','Lee instrucciones, las interpreta y coordina qué hacer y cuándo','Enfría el procesador','Conecta la compu a Internet'],ans:1},
+{mod:'i1',hint:'💡 Son memorias diminutas pero increíblemente rápidas, ubicadas dentro de la propia CPU.',q:'¿Qué son los registros dentro de la CPU?',opts:['Archivos de configuración del sistema operativo','Memorias muy pequeñas y extremadamente rápidas dentro de la CPU','Los cables que conectan el mouse','Un tipo de periférico de salida'],ans:1},
+{mod:'i1',hint:'💡 Es la unidad con la que se suele comparar "qué tan rápido" es un procesador.',q:'¿En qué unidad se mide típicamente la velocidad de una CPU?',opts:['GB','GHz','Mbps','Watts'],ans:1},
+{mod:'i1',hint:'💡 Si apagás la compu, esta memoria pierde todo lo que tenía guardado.',q:'¿Qué tipo de memoria es volátil, es decir, se borra al apagar el equipo?',opts:['ROM','Disco rígido','RAM','SSD'],ans:2},
+{mod:'i1',hint:'💡 Guarda información esencial (como el BIOS/UEFI) que no se borra al apagar la compu.',q:'¿Qué característica tiene la memoria ROM?',opts:['Es volátil como la RAM','Es permanente y de solo lectura','Se usa solo para periféricos','Es más rápida que los registros'],ans:1},
+{mod:'i1',hint:'💡 De más rápida (pero carísima y chiquita) a más lenta (pero grande y barata): registros, caché, RAM y almacenamiento.',q:'Ordenando de más rápida a más lenta, ¿cuál es la jerarquía de memoria?',opts:['RAM → Caché → Registros → SSD','Registros → Caché → RAM → SSD/almacenamiento','SSD → RAM → Caché → Registros','Caché → RAM → Registros → SSD'],ans:1},
+{mod:'i1',hint:'💡 Pensá qué hace ese periférico: ¿le da información a la compu o la compu se la da a él?',q:'Un mouse es un periférico de…',opts:['Salida','Almacenamiento','Entrada','Procesamiento'],ans:2},
+{mod:'i1',hint:'💡 Una impresora recibe la orden de la compu y produce algo hacia afuera (papel).',q:'Una impresora es un periférico de…',opts:['Entrada','Salida','Entrada y Salida','Almacenamiento'],ans:1},
+{mod:'i1',hint:'💡 Con una pantalla táctil podés tocar (entrada) y también ver lo que muestra (salida).',q:'Una pantalla táctil es un periférico de…',opts:['Solo entrada','Solo salida','Entrada y Salida (E/S)','Ninguna de las anteriores'],ans:2},
+{mod:'i1',hint:'💡 Tu celular tiene procesador (SoC), memoria RAM, almacenamiento y periféricos integrados: sigue el mismo modelo.',q:'Un celular moderno, en términos de arquitectura, ¿sigue el modelo Von Neumann?',opts:['No, usa un modelo totalmente distinto','Sí: tiene CPU (SoC), RAM, almacenamiento y periféricos integrados','No, porque no tiene memoria RAM','Sí, pero solo si tiene teclado físico'],ans:1},
+// ── i2: SOFTWARE ────────────────────────────────────────────
+{mod:'i2',hint:'💡 Es la contraparte intangible del hardware: no lo podés tocar, pero hace que la máquina funcione.',q:'¿Qué es el software?',opts:['El conjunto de piezas físicas de la computadora','El conjunto de programas, instrucciones y datos que hacen funcionar al hardware','Un tipo de periférico de entrada','La memoria RAM de la computadora'],ans:1},
+{mod:'i2',hint:'💡 Es el "jefe" que administra todo: hace de intermediario entre el hardware y los programas que usás.',q:'¿Cuál es la función principal del Sistema Operativo (SO)?',opts:['Traducir idiomas en videollamadas','Ser el intermediario entre el hardware y las aplicaciones','Conectar la compu a Internet únicamente','Diseñar la interfaz de los videojuegos'],ans:1},
+{mod:'i2',hint:'💡 El SO se encarga de organizar quién usa el procesador, dónde se guarda cada cosa, los archivos y los dispositivos conectados.',q:'¿Cuáles son las principales funciones de un Sistema Operativo?',opts:['Gestión de procesos, memoria, archivos y dispositivos','Solo mostrar el escritorio y los íconos','Únicamente conectar impresoras','Solo instalar antivirus'],ans:0},
+{mod:'i2',hint:'💡 Es el contrato legal que dice qué podés (y no podés) hacer con un programa: usarlo, copiarlo, modificarlo, distribuirlo.',q:'¿Qué es una licencia de software?',opts:['El precio de un programa','Un contrato legal que regula el uso, copia, modificación y distribución del software','El manual de instrucciones','Un antivirus incorporado'],ans:1},
+{mod:'i2',hint:'💡 Es gratis para usar, pero no podés modificarlo ni ver cómo está hecho por dentro. Ejemplos: Zoom, Skype, WinRAR.',q:'¿Qué tipo de licencia describe a un programa gratuito, pero que no se puede modificar?',opts:['Software libre','Freeware','Shareware comercial','Software propietario de pago'],ans:1},
+{mod:'i2',hint:'💡 Es gratuito Y modificable, con el código a la vista. Ejemplos: Linux, VLC, Firefox.',q:'¿Qué tipo de licencia permite usar, estudiar, modificar y compartir un programa libremente?',opts:['Freeware','Software libre (GPL)','Software propietario','Trial/Demo'],ans:1},
+{mod:'i2',hint:'💡 "Libre" no es sinónimo de "gratis": se refiere a la libertad de usar, estudiar, modificar y compartir.',q:'¿Es correcto decir que "software libre" siempre significa "software gratis"?',opts:['Sí, son exactamente lo mismo','No: "libre" se refiere a la libertad de uso, estudio, modificación y distribución, no al precio','Sí, porque nadie cobra por software libre','No, software libre siempre es de pago'],ans:1},
+{mod:'i2',hint:'💡 Es el "ladrillo" más chiquito de toda la información digital: solo puede ser 0 o 1.',q:'¿Cuál es la unidad mínima de información en una computadora?',opts:['El byte','El bit','El pixel','El bus'],ans:1},
+{mod:'i2',hint:'💡 Agrupando 8 de la unidad mínima obtenés esta otra unidad, usada para medir archivos.',q:'¿Cuántos bits forman un byte?',opts:['4 bits','8 bits','16 bits','1024 bits'],ans:1},
+{mod:'i2',hint:'💡 En informática se suele trabajar en base 2, así que no es exactamente 1000 sino una potencia de 2.',q:'¿Cuántos bytes tiene aproximadamente 1 Kilobyte (KB) en el sistema binario?',opts:['100 bytes','1000 bytes exactos','1024 bytes','2048 bytes'],ans:2},
+{mod:'i2',hint:'💡 Ojo con no confundir: una cosa se mide en bits por segundo y la otra en bytes.',q:'¿Cómo se suele medir la velocidad de una conexión de red (por ejemplo, el WiFi)?',opts:['En bytes (GB)','En bits por segundo (Mbps)','En Hertz de la CPU','En píxeles por segundo'],ans:1},
+{mod:'i2',hint:'💡 Windows y macOS son ejemplos de software que hay que pagar y cuyo código no podés modificar.',q:'Windows y macOS son ejemplos de software…',opts:['Libre','Propietario','Gratuito y modificable','De dominio público'],ans:1},
+{mod:'i2',hint:'💡 Linux (y sistemas basados en él) es el ejemplo clásico de este tipo de software en sistemas operativos.',q:'Linux es un ejemplo de sistema operativo de tipo…',opts:['Propietario','Freeware','Software libre','Shareware'],ans:2},
+// ── i3: ALGORITMOS ──────────────────────────────────────────
+{mod:'i3',hint:'💡 Tiene que tener un final, seguir un orden claro, y no dejar lugar a dudas sobre qué hacer en cada paso.',q:'¿Qué es un algoritmo?',opts:['Cualquier conjunto de ideas sin orden','Una secuencia finita, ordenada y sin ambigüedades de pasos para resolver un problema','Un lenguaje de programación','Un tipo de hardware'],ans:1},
+{mod:'i3',hint:'💡 Es la estructura más simple: los pasos se ejecutan uno después del otro, sin saltos ni repeticiones.',q:'¿Cómo se llama la estructura algorítmica donde los pasos se ejecutan uno tras otro, en orden?',opts:['Estructura condicional','Estructura secuencial','Estructura repetitiva','Estructura recursiva'],ans:1},
+{mod:'i3',hint:'💡 Permite que el programa tome un camino u otro según se cumpla o no una condición.',q:'¿Para qué sirve una estructura condicional (SI / SI NO) en un algoritmo?',opts:['Para repetir pasos indefinidamente','Para tomar decisiones y ejecutar distintos caminos según una condición','Para guardar datos en memoria','Para conectar periféricos'],ans:1},
+{mod:'i3',hint:'💡 Repite un bloque de instrucciones MIENTRAS se cumpla una condición.',q:'¿Qué estructura de control repite pasos mientras se cumpla una condición?',opts:['SI / SI NO','MIENTRAS (while)','PARA (for)','FIN'],ans:1},
+{mod:'i3',hint:'💡 Este ciclo repite una cantidad exacta y conocida de veces, ideal cuando ya sabés cuántas repeticiones necesitás.',q:'¿Qué estructura repetitiva se usa cuando ya se sabe exactamente cuántas veces hay que repetir algo?',opts:['MIENTRAS','PARA (for)','SI / SI NO','Secuencial'],ans:1},
+{mod:'i3',hint:'💡 Si la condición de un MIENTRAS nunca cambia ni se vuelve falsa, el programa queda repitiendo para siempre.',q:'¿Qué problema puede ocurrir si la condición de un ciclo MIENTRAS nunca cambia?',opts:['El programa termina antes de tiempo','Se produce un bucle infinito','El programa se vuelve más rápido','No pasa nada, funciona igual'],ans:1},
+{mod:'i3',hint:'💡 Es una forma de escribir los pasos del algoritmo en un lenguaje cercano al humano, sin la sintaxis estricta de un lenguaje de programación.',q:'¿Qué es el pseudocódigo?',opts:['Un lenguaje de programación real como Python','Una forma de escribir algoritmos en lenguaje cercano al natural, sin sintaxis estricta','Un tipo de hardware','Un error de programación'],ans:1},
+{mod:'i3',hint:'💡 En los diagramas de flujo, esta figura con forma de rombo se usa para representar una decisión.',q:'En un diagrama de flujo, ¿qué figura representa una decisión (una pregunta con SI/NO)?',opts:['Rectángulo','Óvalo','Rombo','Paralelogramo'],ans:2},
+{mod:'i3',hint:'💡 Esta figura ovalada marca dónde arranca y dónde termina el diagrama de flujo.',q:'En un diagrama de flujo, ¿qué figura marca el inicio y el fin?',opts:['Rombo','Óvalo/Elipse','Rectángulo','Flecha'],ans:1},
+{mod:'i3',hint:'💡 Un rectángulo simple representa un paso de proceso o una acción dentro del algoritmo.',q:'En un diagrama de flujo, ¿qué figura representa un proceso o una acción?',opts:['Rombo','Óvalo','Rectángulo','Paralelogramo'],ans:2},
+{mod:'i3',hint:'💡 Esta figura inclinada se usa cuando el algoritmo pide un dato al usuario o muestra un resultado.',q:'En un diagrama de flujo, ¿qué figura representa entrada o salida de datos?',opts:['Rombo','Paralelogramo','Círculo','Triángulo'],ans:1},
+{mod:'i3',hint:'💡 Es un entorno de programación visual, con bloques para armar, muy usado para aprender a programar.',q:'Scratch es…',opts:['Un lenguaje de bajo nivel para hardware','Un entorno de programación visual por bloques, del MIT','Un sistema operativo','Un tipo de memoria'],ans:1},
+{mod:'i3',hint:'💡 Consiste en quedarte con lo esencial del problema e ignorar los detalles que no son relevantes para resolverlo.',q:'En pensamiento computacional, ¿qué significa "abstracción"?',opts:['Escribir el código lo más largo posible','Quedarse con lo relevante del problema e ignorar lo superfluo','Repetir un proceso muchas veces','Usar solo números en el algoritmo'],ans:1},
+{mod:'i3',hint:'💡 Es dividir un problema grande en partes más chicas y manejables, para resolverlas una por una.',q:'En pensamiento computacional, ¿qué significa "descomposición"?',opts:['Borrar partes del programa','Dividir un problema grande en partes más pequeñas y manejables','Comprimir un archivo','Traducir el algoritmo a otro idioma'],ans:1},
+// ── i4: INTELIGENCIA ARTIFICIAL ─────────────────────────────
+{mod:'i4',hint:'💡 Se trata de algoritmos complejos que toman decisiones a partir de datos, imitando ciertas capacidades humanas.',q:'¿Qué es la Inteligencia Artificial (IA)?',opts:['Un tipo de hardware muy potente','Un conjunto de algoritmos complejos que toman decisiones basadas en datos','Un sistema operativo especial','Un periférico de entrada avanzado'],ans:1},
+{mod:'i4',hint:'💡 Este matemático británico propuso en 1950 una prueba para saber si una máquina podía "pensar" como un humano.',q:'¿Quién propuso el famoso Test para evaluar si una máquina puede "pensar" como un humano, y en qué año?',opts:['John McCarthy, 1956','Alan Turing, 1950','John von Neumann, 1945','Tim Berners-Lee, 1989'],ans:1},
+{mod:'i4',hint:'💡 En una conferencia en esa universidad de EE.UU. se usó por primera vez el término que hoy conocemos.',q:'¿Quién acuñó el término "Inteligencia Artificial" y en qué conferencia?',opts:['Alan Turing, en Bletchley Park','John McCarthy, en la Conferencia de Dartmouth (1956)','Bill Gates, en Microsoft','Tim Berners-Lee, en el CERN'],ans:1},
+{mod:'i4',hint:'💡 Fue un hito histórico: una máquina le ganó al campeón mundial de ajedrez.',q:'¿Qué hito de la IA ocurrió en 1997?',opts:['Se creó Internet','Deep Blue venció al campeón mundial de ajedrez Gari Kaspárov','Se inventó el primer robot','Se lanzó el primer smartphone'],ans:1},
+{mod:'i4',hint:'💡 Fue un salto enorme en el reconocimiento de imágenes gracias a redes neuronales profundas.',q:'¿Qué avance importante en IA se dio alrededor de 2012?',opts:['El primer test de Turing','Las redes neuronales profundas revolucionaron el reconocimiento de imágenes','Se prohibió la IA en varios países','Se creó la primera computadora'],ans:1},
+{mod:'i4',hint:'💡 Es la técnica de IA más usada hoy: los sistemas "aprenden" patrones a partir de datos, en vez de ser programados paso a paso.',q:'¿Cuál es la técnica de IA más utilizada actualmente?',opts:['Machine Learning (aprendizaje automático)','Programación secuencial clásica','Solo reglas fijas escritas a mano','Bases de datos relacionales'],ans:0},
+{mod:'i4',hint:'💡 Se le muestran al sistema ejemplos ya etiquetados (con la respuesta correcta) para que aprenda de ellos.',q:'¿Cómo se llama el aprendizaje automático donde se entrena al sistema con ejemplos ya etiquetados?',opts:['Aprendizaje no supervisado','Aprendizaje supervisado','Aprendizaje por refuerzo','Aprendizaje aleatorio'],ans:1},
+{mod:'i4',hint:'💡 Acá el sistema busca patrones y agrupa datos por sí solo, sin que nadie le diga la respuesta correcta.',q:'¿Cómo se llama el aprendizaje automático donde el sistema encuentra patrones sin datos etiquetados?',opts:['Aprendizaje supervisado','Aprendizaje no supervisado','Aprendizaje por refuerzo','Aprendizaje manual'],ans:1},
+{mod:'i4',hint:'💡 El sistema aprende a partir de prueba y error, recibiendo recompensas o penalizaciones según sus acciones.',q:'¿Cómo se llama el aprendizaje automático basado en prueba y error con recompensas?',opts:['Aprendizaje supervisado','Aprendizaje no supervisado','Aprendizaje por refuerzo','Aprendizaje pasivo'],ans:2},
+{mod:'i4',hint:'💡 Es un video o imagen generado por IA tan realista que parece auténtico, aunque no lo sea.',q:'¿Qué es un "deepfake"?',opts:['Un virus informático','Un video o imagen falsa generada por IA que parece real','Un tipo de contraseña','Un error de hardware'],ans:1},
+{mod:'i4',hint:'💡 Sucede cuando un sistema de IA "inventa" información y la presenta como si fuera un dato verdadero.',q:'¿Qué significa que una IA "alucinó"?',opts:['Que se rompió el hardware','Que generó información falsa presentándola como verdadera','Que tardó demasiado en responder','Que necesita actualizarse'],ans:1},
+{mod:'i4',hint:'💡 Si los datos con los que se entrenó el sistema tienen prejuicios, la IA puede reproducirlos en sus resultados.',q:'¿Qué riesgo de la IA está relacionado con los datos usados para entrenarla?',opts:['El sesgo (bias) en los resultados','La falta de electricidad','El exceso de velocidad','La falta de espacio en disco'],ans:0},
+// ── i5: ESI Y CONVIVENCIA DIGITAL ────────────────────────────
+{mod:'i5',hint:'💡 Nadie puede publicar tu imagen o tu voz sin tu consentimiento: está en el Código Civil y Comercial.',q:'¿Qué protege el Derecho a la Imagen (Arts. 52 y 53 del Código Civil y Comercial)?',opts:['Que nadie pueda publicar tu imagen o voz sin tu consentimiento','Que todas las fotos sean gratuitas','Que solo los famosos tengan derechos de imagen','Que las escuelas puedan publicar fotos sin permiso'],ans:0},
+{mod:'i5',hint:'💡 Es la ley que protege de forma integral la intimidad y los derechos de niños, niñas y adolescentes.',q:'¿Qué ley argentina protege integralmente los derechos de niñas, niños y adolescentes (incluida su intimidad)?',opts:['Ley 26.061','Ley 26.388','Ley 27.736','Ley 26.904'],ans:0},
+{mod:'i5',hint:'💡 Es el rastro que dejás cada vez que publicás, comentás o interactuás en internet, y que suele quedar permanentemente.',q:'¿Qué es la "huella digital"?',opts:['La huella dactilar escaneada por el celular','El rastro permanente que dejamos con lo que hacemos online','Un tipo de virus informático','La firma electrónica de un documento'],ans:1},
+{mod:'i5',hint:'💡 Esta ley del año 2008 incorporó al Código Penal los delitos cometidos con medios informáticos.',q:'¿Qué ley tipifica los delitos informáticos en Argentina?',opts:['Ley 26.150','Ley 26.388 (2008)','Ley 27.736','Ley 14.750'],ans:1},
+{mod:'i5',hint:'💡 Es la ley que incorporó específicamente el grooming como delito en el Código Penal.',q:'¿Qué ley incorpora el grooming como delito específico en el Código Penal argentino?',opts:['Ley 26.061','Ley 26.904 (Art. 131 del Código Penal)','Ley 26.388','Ley 27.736'],ans:1},
+{mod:'i5',hint:'💡 Va de 6 meses a 4 años, y puede llegar hasta 8 años si de por medio hubo uso de una identidad falsa.',q:'¿Cuál es la pena prevista para el delito de grooming en Argentina?',opts:['De 6 meses a 4 años (hasta 8 con identidad falsa)','Solo una multa económica','No tiene pena, es solo una falta administrativa','De 10 a 20 años de prisión'],ans:0},
+{mod:'i5',hint:'💡 El grooming empieza con un contacto aparentemente inocente, que después busca ganar confianza y aislar a la víctima.',q:'¿Cuál es la primera etapa típica del grooming?',opts:['La denuncia policial','El contacto inicial, generalmente haciéndose pasar por otra persona','El bloqueo del usuario','La difusión de imágenes'],ans:1},
+{mod:'i5',hint:'💡 Lo primero es no ceder ni responder, guardar las pruebas, avisarle a un adulto de confianza y hacer la denuncia.',q:'Si sufrís o ves una situación de grooming, ¿qué se recomienda hacer?',opts:['Responder para ganar tiempo','No responder, bloquear, guardar evidencia y contarle a un adulto de confianza o denunciar','Borrar todo inmediatamente sin avisar a nadie','Publicarlo en redes para exponer al agresor'],ans:1},
+{mod:'i5',hint:'💡 Combina dos delitos del Código Penal: la extorsión (Art. 168) y la violación de secretos (Art. 155).',q:'¿Qué es legalmente la "sextorsión" en Argentina?',opts:['Un tipo de estafa bancaria sin relación con imágenes íntimas','La combinación de extorsión (Art. 168 CP) y violación de secretos (Art. 155 CP)','Un delito que no existe en el Código Penal','Solo una falta escolar'],ans:1},
+{mod:'i5',hint:'💡 Ante una amenaza de este tipo, lo más importante es no ceder al pedido del agresor.',q:'Ante un caso de sextorsión, ¿cuál es la recomendación más importante?',opts:['Pagar o ceder para que no difundan el contenido','No pagar ni ceder, y buscar ayuda de un adulto de confianza o denunciar','Ignorarlo por completo sin contarle a nadie','Responder amenazando también al agresor'],ans:1},
+{mod:'i5',hint:'💡 Se la conoce como "Ley Olimpia" y permite exigir la baja urgente de contenido íntimo difundido sin consentimiento.',q:'¿Qué permite la Ley 27.736 ("Ley Olimpia")?',opts:['Pedir la baja urgente de contenido íntimo no consensuado en las plataformas','Prohibir el uso de redes sociales a menores','Eliminar cualquier tipo de contenido de internet sin trámite','Crear una red social oficial del Estado'],ans:0},
+{mod:'i5',hint:'💡 Es el maltrato sostenido en el tiempo hacia una persona, a través de medios digitales.',q:'¿Qué es el ciberacoso o cyberbullying?',opts:['Un virus que roba contraseñas','El maltrato sostenido hacia una persona a través de medios digitales','Un tipo de licencia de software','Una técnica de programación'],ans:1},
+{mod:'i5',hint:'💡 En el grooming, la responsabilidad siempre recae en la persona adulta que busca el contacto, nunca en el menor.',q:'En una situación de grooming, ¿quién es siempre responsable?',opts:['El adulto que busca el contacto','El menor, por haber respondido','Ambas partes por igual','Nadie, es responsabilidad de la plataforma únicamente'],ans:0},
+{mod:'i5',hint:'💡 Compartir tu contraseña puede parecer un gesto de confianza, pero puede usarse para controlar o vigilar a la otra persona.',q:'¿Por qué compartir contraseñas en una relación de pareja puede ser problemático?',opts:['Porque las contraseñas son muy largas de recordar','Porque puede usarse para controlar, vigilar o amenazar a la otra persona','Porque las apps lo prohíben técnicamente','No es problemático en ningún caso'],ans:1},
+{mod:'i5',hint:'💡 Dar "me gusta" o reenviar contenido dañino también tiene consecuencias: la complicidad virtual amplifica el daño.',q:'Si alguien ve contenido de acoso digital y lo comparte o le da "me gusta", ¿tiene responsabilidad?',opts:['No, mirar o compartir no tiene ninguna consecuencia','Sí: la complicidad virtual amplifica el daño causado','Solo si es mayor de 18 años','Solo si lo comparte más de 10 veces'],ans:1},
+];
+</script>
+
+<!-- [005-013] LÓGICA (config, equipo, música, quiz+timer, búho, resultado+compartir, ranking, print, init) -->
+<script>
+// [005] CONFIG BACKEND
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycby10PjzlmLwAjFKqxoJeJ8lVa9Q-EY7ttzI55GSfI1V0IvhpL5lMbJ5jGlLanV59i2X/exec';
+const CLAVE_DOCENTE='profe2025';
+
+function apiGet(params){
+  return new Promise((resolve)=>{
+    const cbName='cb_'+Math.random().toString(36).slice(2);
+    const url=SCRIPT_URL+'?'+new URLSearchParams({...params,callback:cbName});
+    const script=document.createElement('script');
+    const timer=setTimeout(()=>{
+      delete window[cbName];try{document.body.removeChild(script);}catch(e){}
+      resolve({error:'Sin conexión'});
+    },8000);
+    window[cbName]=function(data){
+      clearTimeout(timer);delete window[cbName];
+      try{document.body.removeChild(script);}catch(e){}
+      resolve(data);
+    };
+    script.src=url;
+    script.onerror=()=>{clearTimeout(timer);delete window[cbName];resolve({error:'Sin conexión'});};
+    document.body.appendChild(script);
+  });
+}
+async function apiPost(data){
+  try{
+    fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});
+  }catch(e){console.warn('apiPost error',e);}
+}
+
+// [006] EQUIPO / LOGIN SIMPLE (sin contraseña, sin confirmación)
+const LS_USER='mundial_nticx_user';
+const LS_SCORES='mundial_nticx_local_scores';
+
+let currentUser=null;
+let pendingScore=null;
+let pendingResume=false;
+
+function slug(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')||'equipo';}
+
+function loadSavedUser(){
+  try{const u=JSON.parse(localStorage.getItem(LS_USER)||'null');if(u){currentUser=u;updateTopbar();}}catch(e){}
+}
+function getLocalScores(){try{return JSON.parse(localStorage.getItem(LS_SCORES)||'{}');}catch(e){return{};}}
+function saveLocalScore(temaId,score){
+  const s=getLocalScores();
+  if(!s[temaId]||score>s[temaId])s[temaId]=score;
+  try{localStorage.setItem(LS_SCORES,JSON.stringify(s));}catch(e){}
+}
+
+function updateTopbar(){
+  const btns=document.getElementById('topbar-btns');
+  if(currentUser){
+    document.getElementById('user-avatar').textContent=currentUser.nombre.charAt(0).toUpperCase();
+    document.getElementById('user-name-display').textContent=currentUser.nombre;
+    document.getElementById('user-mail-display').textContent=currentUser.integrantes&&currentUser.integrantes.length
+      ?('👥 '+currentUser.integrantes.join(', '))
+      :'🙋 Jugador individual';
+    btns.innerHTML=`
+      <button class="tb-btn ranking" onclick="openRanking()">🏆 Tabla de posiciones</button>
+      <button class="tb-btn logout" onclick="doLogout()">Cambiar equipo</button>`;
+  }else{
+    document.getElementById('user-avatar').textContent='⚽';
+    document.getElementById('user-name-display').textContent='Sin equipo';
+    document.getElementById('user-mail-display').textContent='Anotate para guardar tus goles';
+    btns.innerHTML=`
+      <button class="tb-btn ranking" onclick="openRanking()">🏆 Tabla de posiciones</button>
+      <button class="tb-btn login-cta" onclick="openAuth()">⚽ Anotar mi equipo</button>`;
+  }
+}
+
+function openAuth(){
+  pendingResume=false;
+  document.getElementById('auth-sub').textContent='Sin contraseña, sin vueltas. Poné tu nombre (o el de tu equipo) y arrancamos.';
+  document.getElementById('auth-skip-mid').style.display='none';
+  document.getElementById('auth-overlay').classList.add('open');
+  switchAuthTab('individual');
+}
+function switchAuthTab(tab){
+  document.getElementById('tab-ind').classList.toggle('active',tab==='individual');
+  document.getElementById('tab-equipo').classList.toggle('active',tab==='equipo');
+  document.getElementById('form-individual').style.display=tab==='individual'?'block':'none';
+  document.getElementById('form-equipo').style.display=tab==='equipo'?'block':'none';
+  clearAuthMsg();
+}
+function showAuthMsg(txt,type){const el=document.getElementById('auth-msg');el.textContent=txt;el.className='auth-msg show '+type;}
+function clearAuthMsg(){const el=document.getElementById('auth-msg');el.className='auth-msg';el.textContent='';}
+
+function doStartTeam(){
+  const isEquipo=document.getElementById('tab-equipo').classList.contains('active');
+  let nombre='',integrantes=[];
+  if(isEquipo){
+    nombre=document.getElementById('eq-nombre').value.trim();
+    integrantes=document.getElementById('eq-integrantes').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    if(!nombre){showAuthMsg('Poné el nombre del equipo.','error');return;}
+    if(!integrantes.length){showAuthMsg('Escribí al menos un integrante (nombre y apellido).','error');return;}
+  }else{
+    nombre=document.getElementById('ind-nombre').value.trim();
+    if(!nombre){showAuthMsg('Poné tu nombre y apellido.','error');return;}
+    integrantes=[nombre];
+  }
+  currentUser={nombre,integrantes,mail:slug(nombre)+'@mundial.nticx'};
+  localStorage.setItem(LS_USER,JSON.stringify(currentUser));
+  updateTopbar();
+  // Registro en segundo plano, sin bloquear ni pedir confirmación
+  apiPost({action:'register',nombre:currentUser.nombre,mail:currentUser.mail,pass:'mundial'});
+  syncAllLocalScores();
+  document.getElementById('auth-overlay').classList.remove('open');
+  document.getElementById('auth-skip-mid').style.display='none';
+  clearAuthMsg();
+  if(pendingResume){pendingResume=false;renderQuestion();return;}
+  if(pendingScore){const s=pendingScore;pendingScore=null;uploadScore(s);showResult();}
+}
+function doLogout(){currentUser=null;localStorage.removeItem(LS_USER);updateTopbar();}
+
+async function uploadScore(scoreData){
+  if(!currentUser)return;
+  await apiPost({action:'saveScore',...scoreData,mail:currentUser.mail,nombre:currentUser.nombre});
+}
+async function syncAllLocalScores(){
+  const scores=getLocalScores();
+  const entries=Object.entries(scores);
+  if(!entries.length||!currentUser)return;
+  const hoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const payload=entries.map(([tema,puntaje])=>({mail:currentUser.mail,nombre:currentUser.nombre,tema,puntaje,total:10,fecha:hoy}));
+  await apiPost({action:'syncScores',scores:payload});
+}
+
+// [007] MÚSICA "DESAFÍO" (procedural, sin archivos externos)
+let musicCtx=null,musicOn=false,musicTimer=null,musicStep=0;
+function ensureCtx(){if(!musicCtx)musicCtx=new (window.AudioContext||window.webkitAudioContext)();return musicCtx;}
+function musicBeep(ctx,t,freq,dur,vol,type){
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.connect(g);g.connect(ctx.destination);
+  o.type=type||'square';o.frequency.value=freq;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+.01);
+  g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o.start(t);o.stop(t+dur+.02);
+}
+function musicKick(ctx,t){
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.connect(g);g.connect(ctx.destination);
+  o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);
+  g.gain.setValueAtTime(.22,t);g.gain.exponentialRampToValueAtTime(.001,t+.14);
+  o.start(t);o.stop(t+.15);
+}
+function musicHat(ctx,t){
+  const bufferSize=ctx.sampleRate*.03;
+  const buffer=ctx.createBuffer(1,bufferSize,ctx.sampleRate);
+  const data=buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++)data[i]=(Math.random()*2-1)*.15;
+  const src=ctx.createBufferSource();src.buffer=buffer;
+  const g=ctx.createGain();g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.03);
+  src.connect(g);g.connect(ctx.destination);
+  src.start(t);
+}
+const bassLine=[110,110,146.8,110,130.8,110,98,110];
+function scheduleMusicBar(){
+  if(!musicOn)return;
+  const ctx=ensureCtx();
+  const now=ctx.currentTime+.05;
+  const bpm=132,beat=60/bpm;
+  for(let i=0;i<8;i++){
+    const t=now+i*(beat/2);
+    if(i%2===0)musicKick(ctx,t);
+    musicHat(ctx,t);
+    musicBeep(ctx,t,bassLine[i%bassLine.length],beat/2*.9,.05,'sawtooth');
+    if(i%4===2)musicBeep(ctx,t,880,.08,.03,'square');
+  }
+  musicStep++;
+  musicTimer=setTimeout(scheduleMusicBar,beat*4*1000);
+}
+function toggleMusic(){
+  musicOn=!musicOn;
+  const btn=document.getElementById('music-btn');
+  if(musicOn){
+    ensureCtx();if(musicCtx.state==='suspended')musicCtx.resume();
+    btn.textContent='🔊';btn.classList.add('on');
+    scheduleMusicBar();
+  }else{
+    btn.textContent='🔇';btn.classList.remove('on');
+    clearTimeout(musicTimer);
+  }
+}
+function startMusicForQuiz(){musicOn=false;toggleMusic();}
+function stopMusic(){musicOn=true;toggleMusic();}
+
+// ── BÚHO SABIO — contexto por pregunta (usa el hint propio de cada pregunta) ──
+const BUHO_CONFIG={
+  i1:{mod:'🖥️ Hardware',color:'var(--c1)'},
+  i2:{mod:'💾 Software',color:'var(--c2)'},
+  i3:{mod:'🔢 Algoritmos',color:'var(--c3)'},
+  i4:{mod:'🤖 Inteligencia Artificial',color:'var(--c4)'},
+  i5:{mod:'🛡️ ESI y Convivencia Digital',color:'#f472b6'},
+};
+function mostrarBuhoFlotante(q){
+  const prev=document.getElementById('buho-flotante');
+  if(prev)prev.remove();
+  const cfg=BUHO_CONFIG[q.mod];
+  const pista=q.hint;
+  const isMobile=window.innerWidth<600;
+  const posiciones=isMobile
+    ?[{bottom:'1rem',right:'1rem',left:'auto',top:'auto',align:'flex-end'},
+      {bottom:'1rem',left:'1rem',right:'auto',top:'auto',align:'flex-start'}]
+    :[{bottom:'1.25rem',right:'1.25rem',left:'auto',top:'auto',align:'flex-end'},
+      {bottom:'1.25rem',left:'1.25rem',right:'auto',top:'auto',align:'flex-start'},
+      {top:'5rem',right:'1.25rem',left:'auto',bottom:'auto',align:'flex-end'},
+      {top:'5rem',left:'1.25rem',right:'auto',bottom:'auto',align:'flex-start'}];
+  const pos=posiciones[Math.floor(Math.random()*posiciones.length)];
+  const maxW=isMobile?'calc(100vw - 2rem)':'300px';
+  const wrap=document.createElement('div');
+  wrap.id='buho-flotante';
+  wrap.className='buho-flotante-wrap';
+  wrap.style.cssText=`position:fixed;bottom:${pos.bottom||'auto'};top:${pos.top||'auto'};right:${pos.right||'auto'};left:${pos.left||'auto'};z-index:6000;display:flex;flex-direction:column;align-items:${pos.align};gap:.5rem`;
+  wrap.innerHTML=`
+    <div id="buho-burbuja" style="display:block;background:var(--card);border:1.5px solid ${cfg.color};border-radius:16px;padding:.85rem 1rem;max-width:${maxW};width:${isMobile?'calc(100vw - 2rem)':'300px'};box-shadow:0 8px 32px rgba(0,0,0,.4);animation:slideUpBuho .4s cubic-bezier(.34,1.56,.64,1)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem">
+        <span style="font-family:var(--fh);font-size:.76rem;font-weight:800;color:${cfg.color}">🦉 Búho Sabio · ${cfg.mod}</span>
+        <span onclick="toggleBuho()" style="cursor:pointer;color:var(--muted);font-size:.8rem;padding:.1rem .45rem;border-radius:99px;background:var(--card2)">✕</span>
+      </div>
+      <div style="font-size:${isMobile?'.8rem':'.85rem'};line-height:1.5;color:var(--text)">${pista}</div>
+    </div>
+    <div onclick="toggleBuho()" id="buho-chip" style="background:var(--card);border:2px solid ${cfg.color};border-radius:99px;padding:.45rem .85rem;display:flex;align-items:center;gap:.4rem;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.35);animation:buhoEntrada .4s cubic-bezier(.34,1.56,.64,1)">
+      <span style="font-size:${isMobile?'1.3rem':'1.6rem'};animation:buhoFloat 2.5s ease-in-out infinite">🦉</span>
+      <div>
+        <div style="font-family:var(--fh);font-size:.72rem;font-weight:800;color:${cfg.color}">Búho Sabio</div>
+        <div style="font-size:.62rem;color:var(--muted)">Contexto 💡</div>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+}
+function toggleBuho(){
+  const burbuja=document.getElementById('buho-burbuja');
+  const chip=document.getElementById('buho-chip');
+  if(!burbuja)return;
+  const visible=burbuja.style.display!=='none';
+  burbuja.style.display=visible?'none':'block';
+  if(chip)chip.style.opacity=visible?'1':'.7';
+}
+function cerrarBuho(){
+  const el=document.getElementById('buho-flotante');
+  if(el){el.style.opacity='0';el.style.transition='opacity .2s';setTimeout(()=>el.remove(),200);}
+}
+
+// [008] QUIZ LOGIC + TIMER 10 MIN
+const TEMA_DEFS=[
+  {id:'F1',label:'Fecha 1',mod:'i1',icon:'🖥️',color:'t0'},
+  {id:'F2',label:'Fecha 2',mod:'i2',icon:'💾',color:'t1'},
+  {id:'F3',label:'Fecha 3',mod:'i3',icon:'🔢',color:'t2'},
+  {id:'F4',label:'Fecha 4',mod:'i4',icon:'🤖',color:'t3'},
+  {id:'F5',label:'Fecha 5',mod:'i5',icon:'🛡️',color:'t4'},
+  {id:'FINAL',label:'GRAN FINAL',mod:'all',icon:'🏆',color:'t5'},
+];
+const QUIZ_MINUTES=10;
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function buildQuestions(temaId){
+  const def=TEMA_DEFS.find(t=>t.id===temaId);
+  if(def.mod==='all'){
+    const mods=Object.keys(MODS);
+    let chosen=[];
+    mods.forEach(m=>{chosen.push(...shuffle(BANK.filter(q=>q.mod===m)).slice(0,2));});
+    return shuffle(chosen);
+  }
+  return shuffle(BANK.filter(q=>q.mod===def.mod)).slice(0,10);
+}
+
+function getLogro(pct){
+  if(pct==null) return {medal:'',label:'',color:''};
+  if(pct===100) return {medal:'🏆🐐',label:'¡CAMPEONES DEL MUNDO!',color:'#ffd54a'};
+  if(pct>=90)   return {medal:'⭐⭐⭐',label:'GOLAZO — nivel crack',color:'#ffd54a'};
+  if(pct>=75)   return {medal:'🥇',label:'Muy buen partido',color:'#6cace4'};
+  if(pct>=60)   return {medal:'🥈',label:'Buen resultado',color:'#4ade80'};
+  if(pct>=50)   return {medal:'🥉',label:'Empate ajustado',color:'#ffab2e'};
+  return {medal:'🔁',label:'A entrenar para el próximo partido',color:'#ff5a7a'};
+}
+
+function renderHome(){
+  const scores=getLocalScores();
+  const completados=Object.keys(scores).filter(k=>k!=='FINAL').length;
+  const totalTemas=5;
+  const grid=document.getElementById('temas-grid');
+
+  let motivMsg='';
+  if(completados===0) motivMsg='<div style="text-align:center;margin-bottom:1.5rem;font-size:.88rem;color:var(--muted)">⚽ ¡Elegí la Fecha 1 y arrancá el Mundial!</div>';
+  else if(completados<totalTemas) motivMsg=`<div style="text-align:center;margin-bottom:1.5rem;font-size:.88rem;color:var(--c4)">🔥 Vas ${completados} de ${totalTemas} fechas. ¡Seguí jugando!</div>`;
+  else motivMsg='<div style="text-align:center;margin-bottom:1.5rem;font-size:.88rem;color:var(--c3)">🏆 ¡Completaste la fase de grupos! Ya podés jugar la Gran Final.</div>';
+
+  const progPct=Math.round((completados/totalTemas)*100);
+  const progressBar=`
+    <div style="margin-bottom:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+        <span style="font-family:var(--fh);font-size:.8rem;font-weight:800;color:var(--text)">🗺️ Fase de grupos</span>
+        <span style="font-family:var(--fh);font-size:.8rem;font-weight:800;color:var(--c2)">${completados}/${totalTemas} · ${progPct}%</span>
+      </div>
+      <div style="height:10px;background:var(--card2);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${progPct}%;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:99px;transition:width .6s ease"></div>
+      </div>
+    </div>`;
+
+  grid.innerHTML = `
+    <div style="grid-column:1/-1">${motivMsg}${progressBar}</div>
+    ${TEMA_DEFS.map(def=>{
+    const best=scores[def.id];
+    const totalQ=def.mod==='all'?10:10;
+    const pct=best!=null?Math.round((best/totalQ)*100):null;
+    const logro=getLogro(pct);
+    const isDone=pct!=null&&pct>=60;
+    const isFinal=def.id==='FINAL';
+    const locked=isFinal&&completados<totalTemas;
+
+    const badge=pct!=null
+      ?`<span class="t-badge" style="background:${isDone?'rgba(74,222,128,.18)':'rgba(255,90,122,.15)'};color:${isDone?'#4ade80':'#ff5a7a'};border:1px solid ${isDone?'rgba(74,222,128,.3)':'rgba(255,90,122,.2)'}">${isDone?'✓':''} ${pct}%</span>`
+      :(locked?'<span class="t-badge" style="background:rgba(255,255,255,.08);color:var(--muted)">🔒</span>':'');
+
+    const logroBlock=best!=null?`
+      <div style="margin-top:.5rem;display:flex;align-items:center;justify-content:center;gap:.4rem;flex-wrap:wrap">
+        <span style="font-size:1.3rem">${logro.medal}</span>
+        <div>
+          <div style="font-family:var(--fh);font-size:.73rem;font-weight:800;color:${logro.color}">${logro.label}</div>
+          <div style="font-size:.66rem;color:var(--muted)">${best}/${totalQ} pts · ${pct}%</div>
+        </div>
+      </div>`
+      :`<div style="margin-top:.5rem;font-size:.72rem;color:var(--muted)">${locked?'Ganá las 5 fechas para desbloquear':'Sin intentos aún'}</div>`;
+
+    return `<div class="tema-card ${def.color}" onclick="${locked?'':`startQuiz('${def.id}')`}" style="${locked?'opacity:.55;cursor:not-allowed':''}">
+      ${badge}
+      <div class="jersey">${def.mod==='all'?'🏆':def.mod.slice(1)}</div>
+      <div class="t-icon">${def.icon}</div>
+      <div class="t-label">${def.label}</div>
+      <div class="t-sub">${isFinal?'10 preguntas · todos los módulos':'10 preguntas · '+MODS[def.mod]}</div>
+      ${logroBlock}
+      ${!isFinal?`<button class="print-btn" onclick="event.stopPropagation();openPrint('${def.id}')">🖨️ Imprimir</button>`:''}
+    </div>`;
+  }).join('')}`;
+}
+
+let quizState=null;
+let quizTimerInterval=null;
+let quizSecondsLeft=0;
+
+function startQuiz(temaId){
+  const def=TEMA_DEFS.find(t=>t.id===temaId);
+  const questions=buildQuestions(temaId);
+  quizState={questions,idx:0,score:0,answers:[],temaId,byMod:{}};
+  Object.keys(MODS).forEach(m=>{quizState.byMod[m]={correct:0,total:0};});
+  document.getElementById('quiz-title').textContent=`${def.icon} ${def.label}`;
+  showScreen('quiz');
+  startQuizTimer();
+  startMusicForQuiz();
+  renderQuestion();
+}
+
+function startQuizTimer(){
+  clearInterval(quizTimerInterval);
+  quizSecondsLeft=QUIZ_MINUTES*60;
+  updateTimerDisplay();
+  quizTimerInterval=setInterval(()=>{
+    quizSecondsLeft--;
+    updateTimerDisplay();
+    if(quizSecondsLeft<=0){
+      clearInterval(quizTimerInterval);
+      finishQuizByTimeout();
+    }
+  },1000);
+}
+function updateTimerDisplay(){
+  const chip=document.getElementById('timer-chip');
+  if(!chip)return;
+  const m=Math.floor(quizSecondsLeft/60),s=quizSecondsLeft%60;
+  chip.textContent=`⏱️ ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  chip.classList.toggle('warn',quizSecondsLeft<=120&&quizSecondsLeft>30);
+  chip.classList.toggle('danger',quizSecondsLeft<=30);
+}
+function finishQuizByTimeout(){
+  cerrarBuho();
+  // completar las preguntas restantes como no respondidas (cuentan como incorrectas)
+  while(quizState.answers.length<quizState.questions.length){
+    const q=quizState.questions[quizState.answers.length];
+    quizState.answers.push(false);
+    quizState.byMod[q.mod].total++;
+  }
+  concludeQuiz();
+}
+
+function renderQuestion(){
+  const{questions,idx,score}=quizState;
+  const total=questions.length;
+  document.getElementById('prog-fill').style.width=(idx/total*100)+'%';
+  document.getElementById('prog-label').textContent=`Pregunta ${idx+1} de ${total}`;
+  document.getElementById('quiz-score-live').textContent=score+' pts';
+  document.getElementById('streak-bar').innerHTML=questions.map((_,i)=>{
+    if(i>=idx)return'<div class="streak-dot"></div>';
+    return`<div class="streak-dot ${quizState.answers[i]?'ok':'ko'}"></div>`;
+  }).join('');
+  const q=questions[idx];
+  renderPregunta(q, idx, total);
+  setTimeout(()=>mostrarBuhoFlotante(q), 500);
+}
+
+function renderPregunta(q, idx, total){
+  const letters=['A','B','C','D'];
+  const correctDisplayIdx=q.ans;
+  const optsHtml=[0,1,2,3].map((origIdx,di)=>
+    `<button class="opt" onclick="selectAnswer(${di},${correctDisplayIdx})"><span class="opt-letter">${letters[di]}</span>${q.opts[origIdx]}</button>`
+  ).join('');
+  document.getElementById('q-container').innerHTML=`
+    <div class="q-card" style="animation:slideInCard .3s ease">
+      <div class="q-mod">${MODS[q.mod]}</div>
+      <div class="q-num-badge">Pregunta ${idx+1}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="opts">${optsHtml}</div>
+      <div class="feedback" id="feedback"></div>
+    </div>`;
+}
+
+function selectAnswer(selectedIdx,correctIdx){
+  const opts=document.querySelectorAll('.opt');
+  opts.forEach(o=>o.disabled=true);
+  cerrarBuho();
+  const isCorrect=selectedIdx===correctIdx;
+  opts[selectedIdx].classList.add(isCorrect?'correct':'wrong');
+  if(!isCorrect)opts[correctIdx].classList.add('correct');
+  const q=quizState.questions[quizState.idx];
+  quizState.answers.push(isCorrect);
+  quizState.byMod[q.mod].total++;
+  if(isCorrect){quizState.score++;quizState.byMod[q.mod].correct++;}
+
+  const answers=quizState.answers;
+  let racha=0;
+  for(let i=answers.length-1;i>=0;i--){if(answers[i])racha++;else break;}
+
+  const msgsOk=[
+    ['⚽ ¡GOOOL! 🎯','⚽ ¡Correcto! 💡','⚽ ¡Bien ahí! 👍'],
+    ['🔥 ¡Doblete! 2 seguidas','⚡ ¡Racha de 2! 💪'],
+    ['🔥🔥 ¡Hat-trick! 3 seguidas','💥 ¡Vas volando!'],
+    ['🌟 ¡4 seguidas! Sos figura','💪 ¡Imparable!'],
+    ['🏆 ¡5 SEGUIDAS! Balón de Oro','🔥🔥🔥 ¡Sos una máquina!'],
+  ];
+  const msgIdx=Math.min(racha-1,4);
+  const pool=msgsOk[msgIdx]||msgsOk[0];
+  const msgOk=pool[Math.floor(Math.random()*pool.length)];
+
+  const msgsKo=[
+    '❌ Se te escapó — ¡la próxima entra! 💪',
+    '❌ Pegó en el palo — ¡seguimos! 🚀',
+    '❌ Esa no era — repasá ese tema 📚',
+    '❌ Off-side, pero seguimos jugando 🧠',
+    '❌ No te bajes — ¡todavía podés dar vuelta el partido! 🔥',
+  ];
+  const msgKo=msgsKo[Math.floor(Math.random()*msgsKo.length)];
+
+  const totalQ=quizState.questions.length;
+  const respondidas=quizState.idx+1;
+  const restantes=totalQ-respondidas;
+  let progMsg='';
+  if(restantes===0) progMsg='🏁 ¡Último minuto del partido!';
+  else if(restantes===1) progMsg='📌 Falta 1 pregunta — tiempo de descuento';
+  else if(respondidas===Math.floor(totalQ/2)) progMsg='⚡ ¡Entretiempo!';
+  else if(isCorrect&&racha>=3) progMsg=`🔥 Racha activa: ${racha} correctas seguidas`;
+
+  const fb=document.getElementById('feedback');
+  fb.classList.add('show',isCorrect?'ok':'ko');
+  fb.innerHTML=`
+    <div style="font-weight:700;font-size:.92rem">${isCorrect?msgOk:msgKo}</div>
+    ${!isCorrect?`<div style="margin-top:.3rem;font-size:.82rem;opacity:.85">La respuesta correcta era: <strong>${String.fromCharCode(65+correctIdx)}</strong></div>`:''}
+    ${progMsg?`<div style="margin-top:.35rem;font-size:.78rem;opacity:.75">${progMsg}</div>`:''}
+    <div style="margin-top:.35rem;font-size:.75rem;opacity:.65">Puntaje: ${quizState.score} pts · Pregunta ${respondidas}/${totalQ}</div>
+  `;
+
+  if(isCorrect&&(racha%5===0||racha===3||quizState.score===totalQ))showCombo(quizState.score,totalQ);
+
+  const nb=document.createElement('button');
+  nb.className='next-btn';
+  nb.textContent=restantes>0?'Siguiente →':'Ver resultado 🏁';
+  nb.onclick=nextQuestion;
+  fb.after(nb);
+}
+
+function nextQuestion(){
+  quizState.idx++;
+  if(quizState.idx>=quizState.questions.length){
+    concludeQuiz();
+  } else if(!currentUser && quizState.idx%5===0){
+    openMidQuizReminder();
+  } else {
+    renderQuestion();
+  }
+}
+
+function openMidQuizReminder(){
+  pendingResume=true;
+  document.getElementById('auth-sub').textContent='¡Vas '+quizState.idx+' de '+quizState.questions.length+'! Anotate ahora para no perder tu progreso — no hace falta contraseña.';
+  document.getElementById('auth-skip-mid').style.display='block';
+  document.getElementById('auth-overlay').classList.add('open');
+  switchAuthTab('individual');
+}
+function skipMidReminder(){
+  pendingResume=false;
+  document.getElementById('auth-overlay').classList.remove('open');
+  clearAuthMsg();
+  renderQuestion();
+}
+
+function concludeQuiz(){
+  clearInterval(quizTimerInterval);
+  stopMusic();
+  if(!currentUser){
+    const hoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    pendingScore={tema:quizState.temaId,puntaje:quizState.score,total:quizState.questions.length,fecha:hoy};
+    pendingResume=false;
+    document.getElementById('auth-sub').textContent='¡Terminó el partido! Anotá tu nombre o el de tu equipo para ver el resultado y guardar tu puntaje.';
+    document.getElementById('auth-skip-mid').style.display='none';
+    document.getElementById('auth-overlay').classList.add('open');
+    switchAuthTab('individual');
+  }else{
+    showResult();
+  }
+}
+
+function showCombo(score,totalQ){
+  const pct=Math.round(score/totalQ*100);
+  let msgs;
+  if(pct>=100)msgs=['🎊 ¡PERFECTO! 🏆','💯 ¡Puntaje máximo!','🥇 ¡Imbatible!'];
+  else if(pct>=70)msgs=['💥 ¡Gran nivel!','🎯 ¡Crack total!','🌟 ¡Sos una máquina!'];
+  else msgs=['🔥 ¡En racha!','⚡ ¡Combo!','💥 ¡Seguí así!'];
+  const txt=msgs[Math.floor(Math.random()*msgs.length)];
+  const el=document.createElement('div');
+  el.className='combo-flash';
+  el.style.color=pct>=100?'var(--c2)':pct>=70?'var(--c3)':'var(--c4)';
+  el.textContent=txt;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),900);
+}
+
+// [010] RESULTADO + COMPARTIR
+async function showResult(){
+  const{score,questions,temaId,byMod}=quizState;
+  const total=questions.length;
+  const pct=score/total;
+  saveLocalScore(temaId,score);
+  renderHome();
+
+  let emoji,title,stars,msg;
+  const esPerfecto=score===total;
+  if(esPerfecto){emoji='🏆';title='¡¡¡CAMPEONES DEL MUNDO!!! 🐐🇦🇷';stars='🌟🌟🌟';msg='¡PUNTAJE PERFECTO! Sos una LEYENDA del Mundial NTICx. ¡Tres estrellas en el pecho! ⭐⭐⭐';}
+  else if(pct>=0.9){emoji='🥇';title='¡GOLAZO DE MEDIA CANCHA!';stars='⭐⭐⭐';msg='¡Nivel crack absoluto! Dominás el tema como un 10. 🔥';}
+  else if(pct>=0.75){emoji='🎉';title='¡GRAN PARTIDO!';stars='⭐⭐⭐';msg='Excelente actuación. Repasá lo poquito que falló y sos figura. 💪';}
+  else if(pct>=0.6){emoji='👍';title='¡Buen resultado!';stars='⭐⭐';msg='Ganaste el partido. Hay algunos temas para afianzar. 📚';}
+  else if(pct>=0.5){emoji='⚖️';title='Empate ajustado';stars='⭐⭐';msg='Vas por la mitad. ¡Volvé a intentarlo, seguro mejorás! 💡';}
+  else{emoji='🔁';title='¡A entrenar para el próximo partido!';stars='⭐';msg='Repasá el tema con el material y volvé a jugar. ¡Cada intento suma! 🚀';}
+
+  const incorrectas=questions.filter((_,i)=>!quizState.answers[i]);
+  const reviewHtml=incorrectas.length>0?`
+    <div class="review-box">
+      <div class="review-title">📚 Temas para repasar</div>
+      ${incorrectas.slice(0,5).map(q=>`<div class="review-item">${q.q}</div>`).join('')}
+      ${incorrectas.length>5?`<div style="font-size:.8rem;color:var(--muted);margin-top:.4rem">+ ${incorrectas.length-5} más</div>`:''}
+    </div>`:'';
+
+  const breakdownHtml=Object.entries(byMod).filter(([,d])=>d.total>0).map(([m,d])=>{
+    const mp=d.total>0?Math.round((d.correct/d.total)*100):0;
+    const mc=mp>=70?'var(--c3)':mp>=50?'var(--c4)':'var(--c5)';
+    return`<div class="brow">
+      <div class="brow-name">${MODS[m]}</div>
+      <div class="brow-score" style="color:${mc}">${d.correct}/${d.total}</div>
+      <div class="brow-bar-wrap"><div class="brow-bar" style="width:${mp}%;background:${mc}"></div></div>
+    </div>`;
+  }).join('');
+
+  const best=getLocalScores()[temaId]||score;
+  const scoreData={tema:temaId,puntaje:score,total,fecha:new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})};
+  let saveHtml='';
+  if(currentUser){
+    await uploadScore(scoreData);
+    saveHtml=`<div style="background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:8px;padding:.6rem .9rem;font-size:.82rem;color:var(--c3);margin-bottom:1rem">☁️ Resultado guardado en la tabla de posiciones</div>`;
+  }
+
+  const def=TEMA_DEFS.find(t=>t.id===temaId);
+  const shareText=`🏆 Mundial NTICx — ${currentUser?currentUser.nombre:'Equipo'}\n⚽ ${def.label}: ${score}/${total} (${Math.round(pct*100)}%)\n${esPerfecto?'¡CAMPEONES DEL MUNDO! 🐐🇦🇷':'¡A seguir entrenando! 🔥'}`;
+  const waUrl='https://wa.me/?text='+encodeURIComponent(shareText);
+  const mailUrl='mailto:?subject='+encodeURIComponent('Resultado — Mundial NTICx')+'&body='+encodeURIComponent(shareText);
+
+  const shareHtml=`
+    <div class="share-box">
+      <div class="share-title">📣 Compartir resultado</div>
+      <div class="share-btns">
+        <a class="share-btn wa" href="${waUrl}" target="_blank" rel="noopener">📱 WhatsApp</a>
+        <a class="share-btn mail" href="${mailUrl}">✉️ Mail / Delta Chat</a>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);text-align:center;margin-top:.6rem">Delta Chat funciona sobre mail, así que el botón de Mail también sirve ahí.</div>
+    </div>`;
+
+  document.getElementById('result-card').className='result-card'+(esPerfecto?' champion':'');
+  document.getElementById('result-card').innerHTML=`
+    <div class="result-emoji">${emoji}</div>
+    <div class="result-title">${title}</div>
+    <div class="score-display"><span class="score-num">${score}</span><span class="score-den"> / ${total}</span></div>
+    <div class="stars">${stars}</div>
+    <div class="result-msg">${msg}</div>
+    <div class="best-row">
+      <div class="best-chip"><strong>${score}</strong>Este partido</div>
+      <div class="best-chip"><strong>${best}</strong>Mejor resultado</div>
+      <div class="best-chip"><strong>${Math.round(pct*100)}%</strong>Porcentaje</div>
+    </div>
+    ${breakdownHtml?`<div class="breakdown"><div class="breakdown-title">Desglose</div>${breakdownHtml}</div>`:''}
+    ${reviewHtml}
+    ${saveHtml}
+    ${shareHtml}
+    <div class="result-btns">
+      <button class="btn-retry" onclick="startQuiz('${temaId}')">🔄 Revancha</button>
+      <button class="btn-home" onclick="goHome()">🏠 Ver mis logros</button>
+    </div>`;
+  showScreen('result');
+  if(pct>=0.6)launchConfetti(pct);
+}
+
+// [011] RANKING LOGIC
+function openRanking(){document.getElementById('ranking-overlay').classList.add('open');loadTop10();}
+function closeRanking(){document.getElementById('ranking-overlay').classList.remove('open');}
+function switchRankTab(tab){
+  document.getElementById('tab-top10').classList.toggle('active',tab==='top10');
+  document.getElementById('tab-docente').classList.toggle('active',tab==='docente');
+  document.getElementById('tab-top10-content').style.display=tab==='top10'?'block':'none';
+  document.getElementById('tab-docente-content').style.display=tab==='docente'?'block':'none';
+  if(tab==='top10')loadTop10();
+  if(tab==='docente')renderDocenteLogin();
+}
+async function loadTop10(){
+  const el=document.getElementById('tab-top10-content');
+  el.innerHTML=`<div class="ranking-loading"><div class="rk-spinner"></div><div>Cargando tabla…</div></div>`;
+  try{
+    const data=await apiGet({action:'getRanking'});
+    const ranking=data.ranking||[];
+    if(!ranking.length){el.innerHTML='<div class="ranking-empty">🏁 Todavía no hay resultados. ¡Sé el primero!</div>';return;}
+    const posIcons=['🥇','🥈','🥉'];
+    const posCols=['gold','silver','bronze'];
+    el.innerHTML=`
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">Suma de mejores resultados · actualizado en tiempo real</div>
+      <div class="top10-list">
+        ${ranking.map((u,i)=>{
+          const isMe=currentUser&&u.mail===currentUser.mail;
+          return`<div class="top10-item${isMe?' me':''}">
+            <div class="top10-pos ${i<3?posCols[i]:''}">${i<3?posIcons[i]:i+1}</div>
+            <div>
+              <div class="top10-name">${u.nombre}${isMe?' <span style="color:var(--c2);font-size:.7rem">(vos)</span>':''}</div>
+              <div class="top10-sub">${u.temas} fecha${u.temas!==1?'s':''} jugada${u.temas!==1?'s':''}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="top10-pts">${u.total} pts</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }catch(e){el.innerHTML='<div class="ranking-empty">⚠️ No se pudo cargar la tabla.</div>';}
+}
+function renderDocenteLogin(){
+  document.getElementById('tab-docente-content').innerHTML=`
+    <div style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Ingresá la contraseña docente para ver todos los datos.</div>
+    <div class="doc-pass-wrap">
+      <input type="password" id="doc-pass" placeholder="Contraseña docente" onkeydown="if(event.key==='Enter')loadDocente()">
+      <button onclick="loadDocente()">Ver →</button>
+    </div>
+    <div id="doc-err" style="color:var(--c5);font-size:.82rem;margin-top:.4rem;display:none">Contraseña incorrecta.</div>`;
+}
+async function loadDocente(){
+  const pass=document.getElementById('doc-pass').value.trim();
+  const el=document.getElementById('tab-docente-content');
+  el.innerHTML=`<div class="ranking-loading"><div class="rk-spinner"></div><div>Cargando…</div></div>`;
+  try{
+    const data=await apiGet({action:'getAll',pass});
+    if(data.error){renderDocenteLogin();document.getElementById('doc-err').style.display='block';return;}
+    const puntajes=(data.puntajes||[]).slice(1);
+    const usuarios=(data.usuarios||[]).slice(1);
+    const totalIntentos=puntajes.length;
+    const avgPts=totalIntentos?Math.round(puntajes.reduce((s,r)=>s+Number(r[3]),0)/totalIntentos*10)/10:0;
+    el.innerHTML=`
+      <div class="doc-stat-row">
+        <div class="doc-stat"><strong>${usuarios.length}</strong><span>Registrados</span></div>
+        <div class="doc-stat"><strong>${totalIntentos}</strong><span>Partidos jugados</span></div>
+        <div class="doc-stat"><strong>${avgPts}</strong><span>Prom. pts</span></div>
+      </div>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead><tr><th>Equipo/Nombre</th><th>Fecha</th><th>Puntaje</th><th>Fecha jugada</th></tr></thead>
+          <tbody>${puntajes.map(r=>`<tr><td><strong>${r[1]}</strong></td><td>${r[2]}</td><td>${r[3]}/${r[4]}</td><td>${r[5]||'—'}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div style="text-align:center;margin-top:1rem">
+        <button onclick="renderDocenteLogin()" style="background:var(--card2);border:1px solid var(--border);border-radius:99px;padding:.4rem 1rem;color:var(--muted);font-family:var(--fh);font-size:.75rem;cursor:pointer">🔒 Cerrar sesión docente</button>
+      </div>`;
+  }catch(e){el.innerHTML='<div class="ranking-empty">⚠️ Error al cargar datos.</div>';}
+}
+
+// [012] PRINT / PDF
+function launchConfetti(pct){
+  const c=document.getElementById('confetti-container');
+  const cols=['#6cace4','#ffd54a','#4ade80','#ffab2e','#ff5a7a','#fff','#ffd700'];
+  const count=pct>=1?220:pct>=0.9?160:pct>=0.75?110:60;
+  for(let i=0;i<count;i++){
+    const el=document.createElement('div');el.className='confetti-piece';
+    const s=Math.random()*10+4;
+    el.style.cssText=`left:${Math.random()*100}%;background:${cols[Math.floor(Math.random()*cols.length)]};width:${s}px;height:${s}px;animation-delay:${Math.random()*2}s;animation-duration:${Math.random()*2+2.5}s;border-radius:${Math.random()>.5?'50%':'2px'};`;
+    c.appendChild(el);
+  }
+  if(pct>=1){
+    setTimeout(()=>{
+      for(let i=0;i<120;i++){
+        const el=document.createElement('div');el.className='confetti-piece';
+        const s=Math.random()*12+5;
+        el.style.cssText=`left:${Math.random()*100}%;background:${cols[Math.floor(Math.random()*cols.length)]};width:${s}px;height:${s}px;animation-delay:${Math.random()*1}s;animation-duration:${Math.random()*2+2}s;border-radius:${Math.random()>.5?'50%':'3px'};`;
+        c.appendChild(el);
+      }
+    },1200);
+  }
+  setTimeout(()=>{c.innerHTML='';},9000);
+}
+
+const LETTERS=['A','B','C','D'];
+function buildPrintContent(def,questions){
+  const bm={};Object.keys(MODS).forEach(m=>{bm[m]=[];});
+  questions.forEach(q=>bm[q.mod].push(q));
+  let qG=0,ak=[],sec='';
+  Object.keys(MODS).forEach(mod=>{
+    const qs=bm[mod];if(!qs.length)return;
+    let qh='';
+    qs.forEach(q=>{
+      qG++;ak.push({num:qG,letter:LETTERS[q.ans]});
+      const oh=[0,1,2,3].map((oi,di)=>`<div class="pc-opt"><span class="pc-opt-letter">${LETTERS[di]}</span><span>${q.opts[oi]}</span></div>`).join('');
+      qh+=`<div class="pc-q"><div class="pc-q-text"><span class="pc-q-num">${qG}.</span>${q.q}</div><div class="pc-opts">${oh}</div></div>`;
+    });
+    sec+=`<div class="pc-mod-section"><div class="pc-mod-label">${MODS[mod]}</div>${qh}</div>`;
+  });
+  const now=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  return`<div class="pc-header"><h2>🏆 Mundial NTICx 4° Año · ${def.label}</h2><p>Selección múltiple — marcá la opción correcta</p><div class="pc-meta"><span>📋 ${questions.length} preguntas</span><span>⏱️ 10 min</span><span>📅 ${now}</span><span>👤 Nombre: ___________________________</span></div></div>${sec}<div class="pc-answer-key"><h3>🔑 Clave de respuestas</h3><div class="pc-answers-grid">${ak.map(a=>`<div class="pc-ans-item"><div class="an">${a.num}</div><div class="av">${a.letter}</div></div>`).join('')}</div></div><div class="pc-footer">Mundial NTICx · Generado automáticamente</div>`;
+}
+function openPrint(temaId){
+  const def=TEMA_DEFS.find(t=>t.id===temaId);
+  document.getElementById('pm-title').textContent=`${def.icon} ${def.label} — Vista previa`;
+  document.getElementById('pm-body').innerHTML=`<div class="pc-tema-block" style="page-break-after:always">${buildPrintContent(def,buildQuestions(temaId))}</div>`;
+  document.getElementById('print-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function openPrintAll(){
+  document.getElementById('pm-title').textContent='🖨️ Todas las fechas';
+  document.getElementById('pm-body').innerHTML=TEMA_DEFS.filter(d=>d.id!=='FINAL').map(def=>`<div class="pc-tema-block" style="page-break-after:always">${buildPrintContent(def,buildQuestions(def.id))}</div>`).join('');
+  document.getElementById('print-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closePrint(){document.getElementById('print-overlay').classList.remove('open');document.body.style.overflow='';}
+
+// [013] NAVEGACIÓN / INIT
+function showScreen(id){
+  ['home','quiz','result'].forEach(s=>{
+    const el=document.getElementById('screen-'+s);
+    if(el)el.classList.toggle('active',s===id);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function goHome(){clearInterval(quizTimerInterval);stopMusic();renderHome();showScreen('home');}
+
+loadSavedUser();
+renderHome();
+</script>
+</body>
+</html>
