@@ -7,7 +7,7 @@
      Login simple (individual o equipo, sin contraseña), timer de
      10 min por partido, música tipo desafío, búho da contexto en
      cada pregunta, compartir resultado por WhatsApp/Mail (Delta
-     Chat usa el mismo protocolo de mail).  
+     Chat usa el mismo protocolo de mail).
      ============================================================
      ÍNDICE DE NAVEGACIÓN
      [001] HEAD / META                     - línea 24
@@ -1030,34 +1030,75 @@ const BUHO_CONFIG={
   i4b:{mod:'🤖 IA Avanzada',color:'var(--c4)'},
   i5b:{mod:'🛡️ ESI Avanzada',color:'#f472b6'},
 };
+let buhoDragPos=null;
+let buhoDragState=null,buhoJustDragged=false;
+function buhoDragStart(wrap,x,y){
+  const r=wrap.getBoundingClientRect();
+  buhoDragState={wrap,offX:x-r.left,offY:y-r.top,startX:x,startY:y,moved:false};
+  wrap.style.left=r.left+'px';wrap.style.top=r.top+'px';wrap.style.right='auto';wrap.style.bottom='auto';
+}
+function buhoDragMove(x,y){
+  if(!buhoDragState)return;
+  if(Math.abs(x-buhoDragState.startX)>5||Math.abs(y-buhoDragState.startY)>5)buhoDragState.moved=true;
+  const nx=Math.max(4,Math.min(window.innerWidth-60,x-buhoDragState.offX));
+  const ny=Math.max(4,Math.min(window.innerHeight-60,y-buhoDragState.offY));
+  buhoDragState.wrap.style.left=nx+'px';
+  buhoDragState.wrap.style.top=ny+'px';
+  buhoDragPos={left:nx,top:ny};
+}
+function buhoDragEnd(){
+  if(buhoDragState)buhoJustDragged=buhoDragState.moved;
+  buhoDragState=null;
+}
+window.addEventListener('mousemove',e=>buhoDragMove(e.clientX,e.clientY));
+window.addEventListener('mouseup',buhoDragEnd);
+window.addEventListener('touchmove',e=>{if(buhoDragState){const t=e.touches[0];buhoDragMove(t.clientX,t.clientY);}},{passive:true});
+window.addEventListener('touchend',buhoDragEnd);
+function initBuhoDragHandlers(wrap){
+  const chip=wrap.querySelector('#buho-chip');
+  const header=wrap.querySelector('.buho-bubble-header');
+  if(chip){
+    chip.addEventListener('mousedown',e=>{buhoDragStart(wrap,e.clientX,e.clientY);e.preventDefault();});
+    chip.addEventListener('touchstart',e=>{const t=e.touches[0];buhoDragStart(wrap,t.clientX,t.clientY);},{passive:true});
+    chip.addEventListener('click',()=>{if(buhoJustDragged){buhoJustDragged=false;return;}toggleBuho();});
+  }
+  if(header){
+    header.addEventListener('mousedown',e=>{if(e.target.closest('.buho-close-x'))return;buhoDragStart(wrap,e.clientX,e.clientY);e.preventDefault();});
+    header.addEventListener('touchstart',e=>{if(e.target.closest('.buho-close-x'))return;const t=e.touches[0];buhoDragStart(wrap,t.clientX,t.clientY);},{passive:true});
+  }
+}
 function mostrarBuhoFlotante(q){
   const prev=document.getElementById('buho-flotante');
   if(prev)prev.remove();
   const cfg=BUHO_CONFIG[q.mod];
   const pista=q.hint;
   const isMobile=window.innerWidth<600;
-  const posiciones=isMobile
-    ?[{bottom:'1rem',right:'1rem',left:'auto',top:'auto',align:'flex-end'},
-      {bottom:'1rem',left:'1rem',right:'auto',top:'auto',align:'flex-start'}]
-    :[{bottom:'1.25rem',right:'1.25rem',left:'auto',top:'auto',align:'flex-end'},
-      {bottom:'1.25rem',left:'1.25rem',right:'auto',top:'auto',align:'flex-start'},
-      {top:'5rem',right:'1.25rem',left:'auto',bottom:'auto',align:'flex-end'},
-      {top:'5rem',left:'1.25rem',right:'auto',bottom:'auto',align:'flex-start'}];
-  const pos=posiciones[Math.floor(Math.random()*posiciones.length)];
   const maxW=isMobile?'calc(100vw - 2rem)':'300px';
   const wrap=document.createElement('div');
   wrap.id='buho-flotante';
   wrap.className='buho-flotante-wrap';
-  wrap.style.cssText=`position:fixed;bottom:${pos.bottom||'auto'};top:${pos.top||'auto'};right:${pos.right||'auto'};left:${pos.left||'auto'};z-index:6000;display:flex;flex-direction:column;align-items:${pos.align};gap:.5rem`;
+  if(buhoDragPos){
+    wrap.style.cssText=`position:fixed;left:${buhoDragPos.left}px;top:${buhoDragPos.top}px;right:auto;bottom:auto;z-index:6000;display:flex;flex-direction:column;align-items:flex-start;gap:.5rem`;
+  }else{
+    const posiciones=isMobile
+      ?[{bottom:'1rem',right:'1rem',left:'auto',top:'auto',align:'flex-end'},
+        {bottom:'1rem',left:'1rem',right:'auto',top:'auto',align:'flex-start'}]
+      :[{bottom:'1.25rem',right:'1.25rem',left:'auto',top:'auto',align:'flex-end'},
+        {bottom:'1.25rem',left:'1.25rem',right:'auto',top:'auto',align:'flex-start'},
+        {top:'5rem',right:'1.25rem',left:'auto',bottom:'auto',align:'flex-end'},
+        {top:'5rem',left:'1.25rem',right:'auto',bottom:'auto',align:'flex-start'}];
+    const pos=posiciones[Math.floor(Math.random()*posiciones.length)];
+    wrap.style.cssText=`position:fixed;bottom:${pos.bottom||'auto'};top:${pos.top||'auto'};right:${pos.right||'auto'};left:${pos.left||'auto'};z-index:6000;display:flex;flex-direction:column;align-items:${pos.align};gap:.5rem`;
+  }
   wrap.innerHTML=`
     <div id="buho-burbuja" style="display:block;background:var(--card);border:1.5px solid ${cfg.color};border-radius:16px;padding:.85rem 1rem;max-width:${maxW};width:${isMobile?'calc(100vw - 2rem)':'300px'};box-shadow:0 8px 32px rgba(0,0,0,.4);animation:slideUpBuho .4s cubic-bezier(.34,1.56,.64,1)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem">
+      <div class="buho-bubble-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem;cursor:move">
         <span style="font-family:var(--fh);font-size:.76rem;font-weight:800;color:${cfg.color}">🦉 Búho Sabio · ${cfg.mod}</span>
-        <span onclick="toggleBuho()" style="cursor:pointer;color:var(--muted);font-size:.8rem;padding:.1rem .45rem;border-radius:99px;background:var(--card2)">✕</span>
+        <span onclick="toggleBuho()" class="buho-close-x" style="cursor:pointer;color:var(--muted);font-size:.8rem;padding:.1rem .45rem;border-radius:99px;background:var(--card2)">✕</span>
       </div>
       <div style="font-size:${isMobile?'.8rem':'.85rem'};line-height:1.5;color:var(--text)">${pista}</div>
     </div>
-    <div onclick="toggleBuho()" id="buho-chip" style="background:var(--card);border:2px solid ${cfg.color};border-radius:99px;padding:.45rem .85rem;display:flex;align-items:center;gap:.4rem;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.35);animation:buhoEntrada .4s cubic-bezier(.34,1.56,.64,1)">
+    <div id="buho-chip" style="background:var(--card);border:2px solid ${cfg.color};border-radius:99px;padding:.45rem .85rem;display:flex;align-items:center;gap:.4rem;cursor:move;box-shadow:0 4px 20px rgba(0,0,0,.35);animation:buhoEntrada .4s cubic-bezier(.34,1.56,.64,1)">
       <span style="font-size:${isMobile?'1.3rem':'1.6rem'};animation:buhoFloat 2.5s ease-in-out infinite">🦉</span>
       <div>
         <div style="font-family:var(--fh);font-size:.72rem;font-weight:800;color:${cfg.color}">Búho Sabio</div>
@@ -1065,6 +1106,7 @@ function mostrarBuhoFlotante(q){
       </div>
     </div>`;
   document.body.appendChild(wrap);
+  initBuhoDragHandlers(wrap);
 }
 function toggleBuho(){
   const burbuja=document.getElementById('buho-burbuja');
