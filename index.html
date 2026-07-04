@@ -7,7 +7,7 @@
      Login simple (individual o equipo, sin contraseña), timer de
      10 min por partido, música tipo desafío, búho da contexto en
      cada pregunta, compartir resultado por WhatsApp/Mail (Delta
-     Chat usa el mismo protocolo de mail).  
+     Chat usa el mismo protocolo de mail).
      ============================================================
      ÍNDICE DE NAVEGACIÓN
      [001] HEAD / META                     - línea 24
@@ -557,7 +557,7 @@ a{color:inherit}
 </div>
 
 <!-- TABLÓN DE MENSAJES (estilo chat de YouTube) -->
-<button class="fab-chat" id="fab-chat" onclick="toggleChatPanel()" title="Tablón de mensajes">💬<span class="fab-dot" id="chat-fab-dot"></span></button>
+<button class="fab-chat" id="fab-chat" title="Tablón de mensajes">💬<span class="fab-dot" id="chat-fab-dot"></span></button>
 <div class="chat-panel" id="chat-panel">
   <div class="chat-head" id="chat-head">
     <h3>💬 Tablón de mensajes</h3>
@@ -1967,6 +1967,7 @@ function toggleChatPanel(force){
   chatOpen=force!==undefined?force:!panel.classList.contains('open');
   panel.classList.toggle('open',chatOpen);
   if(chatOpen){
+    posicionarPanelCercaDeBoton(panel,document.getElementById('fab-chat'));
     document.getElementById('chat-fab-dot').classList.remove('show');
     loadChat(true);
     clearInterval(chatTimer);
@@ -2128,6 +2129,7 @@ renderChatEmojiGrid();
 initChatDrag();
 updateChatMuteBtn();
 makeFabDraggable(document.getElementById('fab-logros'),()=>toggleLogrosPanel());
+makeFabDraggable(document.getElementById('fab-chat'),()=>toggleChatPanel());
 loadChat();
 startChatBadgePolling();
 </script>
