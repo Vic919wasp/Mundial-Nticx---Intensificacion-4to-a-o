@@ -332,7 +332,8 @@ a{color:inherit}
 .lp-toast .lpt-row{display:flex;align-items:center;gap:.5rem;font-size:.8rem;margin-top:.25rem}
 
 /* ── CHAT GENERAL (solo emojis) ── */
-.fab-chat{display:none;position:fixed;bottom:1.25rem;left:1.25rem;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--c3),var(--c1));border:none;box-shadow:0 8px 28px rgba(0,0,0,.45);font-size:1.4rem;cursor:pointer;z-index:6000;align-items:center;justify-content:center;transition:transform .2s}
+.fab-chat{display:none;position:fixed;bottom:1.25rem;left:1.25rem;width:auto;height:auto;border-radius:99px;background:linear-gradient(135deg,var(--c3),var(--c1));border:none;box-shadow:0 8px 28px rgba(0,0,0,.45);font-size:1.2rem;padding:.6rem 1rem .6rem .85rem;gap:.45rem;cursor:pointer;z-index:6000;align-items:center;justify-content:center;transition:transform .2s}
+.fab-chat .fab-chat-label{font-family:var(--fh);font-size:.78rem;font-weight:800;color:#0a1128;white-space:nowrap}
 .fab-chat.show{display:flex}
 .fab-chat:hover{transform:scale(1.07)}
 .fab-chat .fab-dot{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:var(--c5);border:2px solid var(--bg);display:none;font-size:0}
@@ -557,7 +558,7 @@ a{color:inherit}
 </div>
 
 <!-- TABLÓN DE MENSAJES (estilo chat de YouTube) -->
-<button class="fab-chat" id="fab-chat" title="Tablón de mensajes">💬<span class="fab-dot" id="chat-fab-dot"></span></button>
+<button class="fab-chat" id="fab-chat" title="Tablón de mensajes">💬 <span class="fab-chat-label">Chat en vivo</span><span class="fab-dot" id="chat-fab-dot"></span></button>
 <div class="chat-panel" id="chat-panel">
   <div class="chat-head" id="chat-head">
     <h3>💬 Tablón de mensajes</h3>
