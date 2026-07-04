@@ -415,6 +415,7 @@ a{color:inherit}
     <div>
       <div class="user-name" id="user-name-display">Sin equipo</div>
       <div class="user-mail" id="user-mail-display">Anotate para guardar tus goles</div>
+      <div style="font-size:.62rem;color:var(--muted);margin-top:.15rem">👨‍🏫 Profe Víctor Arias · v. 04-2026</div>
     </div>
   </div>
   <div class="topbar-btns" id="topbar-btns">
@@ -542,7 +543,7 @@ a{color:inherit}
 </div>
 
 <!-- PANEL FLOTANTE DE LOGROS -->
-<button class="fab-logros" id="fab-logros" onclick="toggleLogrosPanel()" title="Logros">🏅<span class="fab-dot" id="fab-dot"></span></button>
+<button class="fab-logros" id="fab-logros" title="Logros">🏅<span class="fab-dot" id="fab-dot"></span></button>
 <div class="logros-panel" id="logros-panel">
   <div class="lp-head">
     <h3>🏅 Logros</h3>
@@ -1715,11 +1716,50 @@ function toggleLogrosPanel(force){
   const open=force!==undefined?force:!panel.classList.contains('open');
   panel.classList.toggle('open',open);
   if(open){
+    posicionarPanelCercaDeBoton(panel,document.getElementById('fab-logros'));
     document.getElementById('fab-dot').classList.remove('show');
     switchLogrosTab(lpLiveTab);
   }else{
     clearInterval(lpLiveTimer);
   }
+}
+function posicionarPanelCercaDeBoton(panel,btn){
+  const r=btn.getBoundingClientRect();
+  const pw=panel.offsetWidth||340,ph=panel.offsetHeight||420;
+  let left=r.left+r.width/2-pw/2;
+  left=Math.max(8,Math.min(window.innerWidth-pw-8,left));
+  let top=r.top-ph-10;
+  if(top<8)top=Math.min(window.innerHeight-ph-8,r.bottom+10);
+  panel.style.left=left+'px';
+  panel.style.top=top+'px';
+  panel.style.right='auto';
+  panel.style.bottom='auto';
+}
+function makeFabDraggable(btn,onClick){
+  let state=null,justDragged=false;
+  function start(x,y){
+    const r=btn.getBoundingClientRect();
+    state={offX:x-r.left,offY:y-r.top,startX:x,startY:y,moved:false};
+    btn.style.left=r.left+'px';btn.style.top=r.top+'px';btn.style.right='auto';btn.style.bottom='auto';
+  }
+  function move(x,y){
+    if(!state)return;
+    if(Math.abs(x-state.startX)>5||Math.abs(y-state.startY)>5)state.moved=true;
+    const nx=Math.max(4,Math.min(window.innerWidth-60,x-state.offX));
+    const ny=Math.max(4,Math.min(window.innerHeight-60,y-state.offY));
+    btn.style.left=nx+'px';btn.style.top=ny+'px';
+  }
+  function end(){if(state)justDragged=state.moved;state=null;}
+  btn.addEventListener('mousedown',e=>{start(e.clientX,e.clientY);e.preventDefault();});
+  btn.addEventListener('touchstart',e=>{const t=e.touches[0];start(t.clientX,t.clientY);},{passive:true});
+  window.addEventListener('mousemove',e=>move(e.clientX,e.clientY));
+  window.addEventListener('mouseup',end);
+  window.addEventListener('touchmove',e=>{if(state){const t=e.touches[0];move(t.clientX,t.clientY);}},{passive:true});
+  window.addEventListener('touchend',end);
+  btn.addEventListener('click',e=>{
+    if(justDragged){justDragged=false;e.stopPropagation();return;}
+    onClick();
+  });
 }
 function switchLogrosTab(tab){
   lpLiveTab=tab;
@@ -2087,6 +2127,7 @@ renderHome();
 renderChatEmojiGrid();
 initChatDrag();
 updateChatMuteBtn();
+makeFabDraggable(document.getElementById('fab-logros'),()=>toggleLogrosPanel());
 loadChat();
 startChatBadgePolling();
 </script>
