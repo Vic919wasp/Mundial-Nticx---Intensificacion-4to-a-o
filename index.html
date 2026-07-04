@@ -332,14 +332,21 @@ a{color:inherit}
 .lp-toast .lpt-row{display:flex;align-items:center;gap:.5rem;font-size:.8rem;margin-top:.25rem}
 
 /* ── CHAT GENERAL (solo emojis) ── */
-.fab-chat{position:fixed;bottom:1.25rem;left:1.25rem;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--c3),var(--c1));border:none;box-shadow:0 8px 28px rgba(0,0,0,.45);font-size:1.4rem;cursor:pointer;z-index:6000;display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.fab-chat{display:none;position:fixed;bottom:1.25rem;left:1.25rem;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--c3),var(--c1));border:none;box-shadow:0 8px 28px rgba(0,0,0,.45);font-size:1.4rem;cursor:pointer;z-index:6000;align-items:center;justify-content:center;transition:transform .2s}
+.fab-chat.show{display:flex}
 .fab-chat:hover{transform:scale(1.07)}
 .fab-chat .fab-dot{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:var(--c5);border:2px solid var(--bg);display:none;font-size:0}
 .fab-chat .fab-dot.show{display:block}
-.chat-panel{position:fixed;bottom:5.25rem;left:1.25rem;width:320px;max-width:calc(100vw - 1.5rem);height:min(60vh,480px);background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.55);z-index:6000;display:none;flex-direction:column;overflow:hidden}
+.chat-panel{position:fixed;bottom:5.25rem;left:1.25rem;width:320px;max-width:calc(100vw - 1.5rem);height:min(60vh,480px);min-width:260px;min-height:180px;max-height:85vh;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.55);z-index:6000;display:none;flex-direction:column;overflow:hidden;resize:both}
+.chat-panel.dragging{transition:none;user-select:none}
+.chat-panel.minimized{height:auto!important;resize:none;min-height:0}
+.chat-panel.minimized .chat-feed,.chat-panel.minimized .chat-compose,.chat-panel.minimized .chat-emojis{display:none!important}
 .chat-panel.open{display:flex}
-.chat-head{background:linear-gradient(135deg,rgba(74,222,128,.2),rgba(108,172,228,.15));padding:.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;border-bottom:1px solid var(--border)}
+.chat-head{background:linear-gradient(135deg,rgba(74,222,128,.2),rgba(108,172,228,.15));padding:.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;border-bottom:1px solid var(--border);cursor:move;user-select:none}
 .chat-head h3{font-family:var(--fh);font-size:.88rem;font-weight:800}
+.chat-head-btns{display:flex;gap:.35rem;flex-shrink:0}
+.chat-head-btn{background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:50%;width:26px;height:26px;color:var(--text);cursor:pointer;font-size:.72rem;flex-shrink:0}
+.chat-head-btn.active{background:rgba(255,213,74,.25);border-color:var(--c2)}
 .chat-feed{flex:1;overflow-y:auto;padding:.7rem .8rem;display:flex;flex-direction:column;gap:.4rem}
 .chat-msg{display:flex;align-items:flex-start;gap:.5rem;font-size:.78rem;background:var(--card2);border-radius:10px;padding:.35rem .6rem;max-width:88%}
 .chat-msg.me{align-self:flex-end;background:rgba(255,213,74,.1);border:1px solid rgba(255,213,74,.35)}
@@ -551,9 +558,13 @@ a{color:inherit}
 <!-- TABLÓN DE MENSAJES (estilo chat de YouTube) -->
 <button class="fab-chat" id="fab-chat" onclick="toggleChatPanel()" title="Tablón de mensajes">💬<span class="fab-dot" id="chat-fab-dot"></span></button>
 <div class="chat-panel" id="chat-panel">
-  <div class="chat-head">
+  <div class="chat-head" id="chat-head">
     <h3>💬 Tablón de mensajes</h3>
-    <button class="lp-close" onclick="toggleChatPanel(false)">✕</button>
+    <div class="chat-head-btns">
+      <button class="chat-head-btn" id="chat-mute-btn" onclick="toggleChatMute()" title="Silenciar avisos">🔔</button>
+      <button class="chat-head-btn" id="chat-min-btn" onclick="toggleChatMinimize()" title="Minimizar">➖</button>
+      <button class="chat-head-btn" onclick="toggleChatPanel(false)" title="Cerrar">✕</button>
+    </div>
   </div>
   <div class="chat-feed" id="chat-feed"><div class="chat-empty">Cargando…</div></div>
   <div class="chat-compose">
@@ -1184,6 +1195,7 @@ function startQuiz(temaId){
   startHeartbeat();
   startMiniRank();
   startChatTicker();
+  showChatFab(true);
 }
 
 function startQuizTimer(){
@@ -1344,6 +1356,7 @@ function concludeQuiz(){
   stopHeartbeat();
   stopMiniRank();
   stopChatTicker();
+  showChatFab(false);
   if(!currentUser){
     const hoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
     pendingScore={tema:quizState.temaId,puntaje:quizState.score,total:quizState.questions.length,fecha:hoy};
@@ -1807,6 +1820,66 @@ function onChatInputChange(){
   const val=document.getElementById('chat-msg-input').value.trim();
   document.getElementById('chat-send-btn').disabled=!val;
 }
+function showChatFab(show){
+  const btn=document.getElementById('fab-chat');
+  if(!btn)return;
+  btn.classList.toggle('show',show);
+  if(!show)toggleChatPanel(false);
+}
+
+// Arrastrar el panel por su header
+let chatDrag=null;
+function initChatDrag(){
+  const head=document.getElementById('chat-head');
+  const panel=document.getElementById('chat-panel');
+  function start(x,y){
+    const r=panel.getBoundingClientRect();
+    chatDrag={offX:x-r.left,offY:y-r.top};
+    panel.style.left=r.left+'px';
+    panel.style.top=r.top+'px';
+    panel.style.bottom='auto';
+    panel.style.right='auto';
+    panel.classList.add('dragging');
+  }
+  function move(x,y){
+    if(!chatDrag)return;
+    const nx=Math.max(4,Math.min(window.innerWidth-60,x-chatDrag.offX));
+    const ny=Math.max(4,Math.min(window.innerHeight-60,y-chatDrag.offY));
+    panel.style.left=nx+'px';
+    panel.style.top=ny+'px';
+  }
+  function end(){chatDrag=null;panel.classList.remove('dragging');}
+  head.addEventListener('mousedown',e=>{if(e.target.closest('button'))return;start(e.clientX,e.clientY);e.preventDefault();});
+  window.addEventListener('mousemove',e=>{if(chatDrag)move(e.clientX,e.clientY);});
+  window.addEventListener('mouseup',end);
+  head.addEventListener('touchstart',e=>{if(e.target.closest('button'))return;const t=e.touches[0];start(t.clientX,t.clientY);},{passive:true});
+  window.addEventListener('touchmove',e=>{if(chatDrag){const t=e.touches[0];move(t.clientX,t.clientY);}},{passive:true});
+  window.addEventListener('touchend',end);
+}
+
+// Minimizar (deja solo el header visible)
+function toggleChatMinimize(){
+  const panel=document.getElementById('chat-panel');
+  const min=panel.classList.toggle('minimized');
+  document.getElementById('chat-min-btn').textContent=min?'⬜':'➖';
+}
+
+// Silenciar avisos (punto rojo de mensajes nuevos)
+const LS_CHAT_MUTED='mundial_nticx_chat_muted';
+function isChatMuted(){try{return localStorage.getItem(LS_CHAT_MUTED)==='1';}catch(e){return false;}}
+function toggleChatMute(){
+  const muted=!isChatMuted();
+  try{localStorage.setItem(LS_CHAT_MUTED,muted?'1':'0');}catch(e){}
+  updateChatMuteBtn();
+  if(muted)document.getElementById('chat-fab-dot').classList.remove('show');
+}
+function updateChatMuteBtn(){
+  const btn=document.getElementById('chat-mute-btn');
+  if(!btn)return;
+  const muted=isChatMuted();
+  btn.textContent=muted?'🔕':'🔔';
+  btn.classList.toggle('active',muted);
+}
 function toggleChatPanel(force){
   const panel=document.getElementById('chat-panel');
   chatOpen=force!==undefined?force:!panel.classList.contains('open');
@@ -1834,9 +1907,10 @@ async function sendChatMsg(){
   input.value='';
   document.getElementById('chat-send-btn').disabled=true;
   apiPost({action:'sendChat',mail:currentUser.mail,nombre:currentUser.nombre,msg,ts:Date.now()});
-  // optimista: lo muestro ya mismo sin esperar al backend
+  // optimista: lo muestro ya mismo sin esperar al backend.
+  // (a propósito NO se vuelve a pedir el chat acá: el POST todavía puede no estar
+  // procesado en el Apps Script, y una relectura inmediata pisaría este mensaje)
   appendChatMsgLocal({mail:currentUser.mail,nombre:currentUser.nombre,msg,ts:Date.now()});
-  loadChat();
 }
 function appendChatMsgLocal(m){
   const feed=document.getElementById('chat-feed');
@@ -1865,7 +1939,7 @@ async function loadChat(forceScroll){
       }
     }
     let seen=0;try{seen=Number(localStorage.getItem(LS_CHAT_SEEN)||0);}catch(e){}
-    if(!chatOpen&&msgs.length>seen)document.getElementById('chat-fab-dot').classList.add('show');
+    if(!chatOpen&&!isChatMuted()&&msgs.length>seen)document.getElementById('chat-fab-dot').classList.add('show');
     if(chatOpen)try{localStorage.setItem(LS_CHAT_SEEN,String(msgs.length));}catch(e){}
     renderChatTicker(msgs);
   }catch(e){}
@@ -1964,11 +2038,13 @@ function showScreen(id){
   });
   window.scrollTo({top:0,behavior:'smooth'});
 }
-function goHome(){clearInterval(quizTimerInterval);stopHeartbeat();stopMiniRank();stopChatTicker();stopMusic();renderHome();showScreen('home');}
+function goHome(){clearInterval(quizTimerInterval);stopHeartbeat();stopMiniRank();stopChatTicker();showChatFab(false);stopMusic();renderHome();showScreen('home');}
 
 loadSavedUser();
 renderHome();
 renderChatEmojiGrid();
+initChatDrag();
+updateChatMuteBtn();
 loadChat();
 startChatBadgePolling();
 </script>
