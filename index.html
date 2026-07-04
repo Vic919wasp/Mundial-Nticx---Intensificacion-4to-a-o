@@ -331,6 +331,26 @@ a{color:inherit}
 .lp-toast .lpt-title{font-family:var(--fh);font-weight:800;font-size:.78rem;color:var(--c2);margin-bottom:.3rem}
 .lp-toast .lpt-row{display:flex;align-items:center;gap:.5rem;font-size:.8rem;margin-top:.25rem}
 
+/* ── CHAT GENERAL (solo emojis) ── */
+.fab-chat{position:fixed;bottom:1.25rem;left:1.25rem;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--c3),var(--c1));border:none;box-shadow:0 8px 28px rgba(0,0,0,.45);font-size:1.4rem;cursor:pointer;z-index:6000;display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.fab-chat:hover{transform:scale(1.07)}
+.fab-chat .fab-dot{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:var(--c5);border:2px solid var(--bg);display:none;font-size:0}
+.fab-chat .fab-dot.show{display:block}
+.chat-panel{position:fixed;bottom:5.25rem;left:1.25rem;width:320px;max-width:calc(100vw - 1.5rem);height:min(60vh,480px);background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.55);z-index:6000;display:none;flex-direction:column;overflow:hidden}
+.chat-panel.open{display:flex}
+.chat-head{background:linear-gradient(135deg,rgba(74,222,128,.2),rgba(108,172,228,.15));padding:.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;border-bottom:1px solid var(--border)}
+.chat-head h3{font-family:var(--fh);font-size:.88rem;font-weight:800}
+.chat-feed{flex:1;overflow-y:auto;padding:.7rem .8rem;display:flex;flex-direction:column;gap:.4rem}
+.chat-msg{display:flex;align-items:center;gap:.5rem;font-size:.78rem;background:var(--card2);border-radius:10px;padding:.35rem .6rem;max-width:88%}
+.chat-msg.me{align-self:flex-end;background:rgba(255,213,74,.1);border:1px solid rgba(255,213,74,.35)}
+.chat-msg .cm-name{font-weight:700;color:var(--muted);font-size:.68rem}
+.chat-msg .cm-emoji{font-size:1.15rem}
+.chat-empty{text-align:center;color:var(--muted);font-size:.78rem;padding:1.5rem 0}
+.chat-emojis{display:grid;grid-template-columns:repeat(7,1fr);gap:.3rem;padding:.6rem;border-top:1px solid var(--border);background:var(--card2)}
+.chat-emoji-btn{background:none;border:none;font-size:1.3rem;cursor:pointer;border-radius:8px;padding:.25rem;transition:transform .15s,background .15s}
+.chat-emoji-btn:hover{background:rgba(255,255,255,.08);transform:scale(1.15)}
+.chat-emoji-btn:disabled{opacity:.35;cursor:default;transform:none}
+
 @media(max-width:600px){
   .home-hero h1{font-size:1.5rem}
   .temas-grid{grid-template-columns:1fr 1fr}
@@ -511,6 +531,17 @@ a{color:inherit}
     <button class="lp-tab" id="lp-tab-vivo" onclick="switchLogrosTab('vivo')">🏆 Posiciones en vivo</button>
   </div>
   <div class="lp-body" id="lp-body"></div>
+</div>
+
+<!-- CHAT GENERAL (solo emojis) -->
+<button class="fab-chat" id="fab-chat" onclick="toggleChatPanel()" title="Chat general">💬<span class="fab-dot" id="chat-fab-dot"></span></button>
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-head">
+    <h3>💬 Chat general</h3>
+    <button class="lp-close" onclick="toggleChatPanel(false)">✕</button>
+  </div>
+  <div class="chat-feed" id="chat-feed"><div class="chat-empty">Cargando…</div></div>
+  <div class="chat-emojis" id="chat-emojis"></div>
 </div>
 
 <!-- [004] BANCO DE PREGUNTAS — basado SOLO en nticx-401-1-junio.netlify.app -->
@@ -1729,6 +1760,68 @@ async function loadLogrosVivo(pass){
   }catch(e){return false;}
 }
 
+// [011c] CHAT GENERAL (solo emojis)
+const CHAT_EMOJIS=['⚽','🏆','🔥','🎉','👏','😂','😮','🥳','💪','❤️','😅','🤔','👍','👎','😢','😱','🙌','⭐','🐐','🧠','💻','🤖','🛡️','🔢','🎯','😎','🙏','💯'];
+let chatTimer=null,chatOpen=false,chatCooldown=false;
+const LS_CHAT_SEEN='mundial_nticx_chat_seen';
+function renderChatEmojiGrid(){
+  document.getElementById('chat-emojis').innerHTML=CHAT_EMOJIS.map(e=>
+    `<button class="chat-emoji-btn" onclick="sendChatEmoji('${e}')">${e}</button>`
+  ).join('');
+}
+function toggleChatPanel(force){
+  const panel=document.getElementById('chat-panel');
+  chatOpen=force!==undefined?force:!panel.classList.contains('open');
+  panel.classList.toggle('open',chatOpen);
+  if(chatOpen){
+    document.getElementById('chat-fab-dot').classList.remove('show');
+    loadChat(true);
+    clearInterval(chatTimer);
+    chatTimer=setInterval(loadChat,5000);
+  }else{
+    clearInterval(chatTimer);
+  }
+}
+async function sendChatEmoji(emoji){
+  if(chatCooldown)return;
+  if(!currentUser){openAuth();return;}
+  chatCooldown=true;
+  setTimeout(()=>chatCooldown=false,1200);
+  apiPost({action:'sendChat',mail:currentUser.mail,nombre:currentUser.nombre,emoji,ts:Date.now()});
+  // optimista: lo muestro ya mismo sin esperar al backend
+  appendChatMsgLocal({mail:currentUser.mail,nombre:currentUser.nombre,emoji,ts:Date.now()});
+  loadChat();
+}
+function appendChatMsgLocal(m){
+  const feed=document.getElementById('chat-feed');
+  if(!feed)return;
+  if(feed.querySelector('.chat-empty'))feed.innerHTML='';
+  const isMe=currentUser&&m.mail===currentUser.mail;
+  const div=document.createElement('div');
+  div.className='chat-msg'+(isMe?' me':'');
+  div.innerHTML=`<span class="cm-name">${m.nombre}</span><span class="cm-emoji">${m.emoji}</span>`;
+  feed.appendChild(div);
+  feed.scrollTop=feed.scrollHeight;
+}
+async function loadChat(forceScroll){
+  try{
+    const data=await apiGet({action:'getChat'});
+    const msgs=data.mensajes||[];
+    const feed=document.getElementById('chat-feed');
+    if(!feed)return;
+    if(!msgs.length){feed.innerHTML='<div class="chat-empty">Todavía no hay mensajes. ¡Mandá el primer emoji! 👋</div>';return;}
+    feed.innerHTML=msgs.map(m=>{
+      const isMe=currentUser&&m.mail===currentUser.mail;
+      return`<div class="chat-msg${isMe?' me':''}"><span class="cm-name">${m.nombre}</span><span class="cm-emoji">${m.emoji}</span></div>`;
+    }).join('');
+    if(chatOpen||forceScroll)feed.scrollTop=feed.scrollHeight;
+    let seen=0;try{seen=Number(localStorage.getItem(LS_CHAT_SEEN)||0);}catch(e){}
+    if(!chatOpen&&msgs.length>seen)document.getElementById('chat-fab-dot').classList.add('show');
+    if(chatOpen)try{localStorage.setItem(LS_CHAT_SEEN,String(msgs.length));}catch(e){}
+  }catch(e){}
+}
+function startChatBadgePolling(){setInterval(loadChat,20000);}
+
 // [012] PRINT / PDF
 function launchConfetti(pct){
   const c=document.getElementById('confetti-container');
@@ -1798,6 +1891,9 @@ function goHome(){clearInterval(quizTimerInterval);stopHeartbeat();stopMiniRank(
 
 loadSavedUser();
 renderHome();
+renderChatEmojiGrid();
+loadChat();
+startChatBadgePolling();
 </script>
 </body>
 </html>
