@@ -346,12 +346,18 @@ a{color:inherit}
 .chat-msg .cm-name{font-weight:700;color:var(--muted);font-size:.68rem}
 .chat-msg .cm-emoji{font-size:1.15rem}
 .chat-empty{text-align:center;color:var(--muted);font-size:.78rem;padding:1.5rem 0}
-.chat-emojis{display:grid;grid-template-columns:repeat(7,1fr);gap:.3rem;padding:.6rem;border-top:1px solid var(--border);background:var(--card2)}
+.chat-emojis{display:none;grid-template-columns:repeat(7,1fr);gap:.3rem;padding:.6rem;border-top:1px solid var(--border);background:var(--card2);max-height:140px;overflow-y:auto}
+.chat-emojis.open{display:grid}
 .chat-emoji-btn{background:none;border:none;font-size:1.3rem;cursor:pointer;border-radius:8px;padding:.25rem;transition:transform .15s,background .15s}
 .chat-emoji-btn:hover{background:rgba(255,255,255,.08);transform:scale(1.15)}
 .chat-emoji-btn:disabled{opacity:.35;cursor:default;transform:none}
-.chat-word-input{margin:0 .6rem;padding:.45rem .7rem;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:.78rem;outline:none}
+.chat-compose{display:flex;gap:.4rem;padding:.6rem;border-top:1px solid var(--border);background:var(--card2)}
+.chat-word-input{flex:1;min-width:0;padding:.45rem .7rem;background:var(--card);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:.78rem;outline:none}
 .chat-word-input:focus{border-color:var(--c3)}
+.chat-emoji-toggle{width:38px;height:38px;flex-shrink:0;border-radius:8px;background:var(--card);border:1.5px solid var(--border);font-size:1.1rem;cursor:pointer}
+.chat-emoji-toggle.picked{border-color:var(--c3)}
+.chat-send-btn{background:var(--c1);border:none;border-radius:8px;padding:0 .9rem;color:#0a1128;font-weight:700;font-size:.76rem;cursor:pointer;flex-shrink:0}
+.chat-send-btn:disabled{opacity:.4;cursor:default}
 
 /* ── TICKER DE CHAT EN EL QUIZ (carrusel) ── */
 .chat-ticker{display:flex;gap:.5rem;overflow-x:auto;padding:.4rem .1rem;margin:.1rem 0 .3rem;scrollbar-width:none;scroll-snap-type:x mandatory;scroll-behavior:smooth}
@@ -550,7 +556,11 @@ a{color:inherit}
     <button class="lp-close" onclick="toggleChatPanel(false)">✕</button>
   </div>
   <div class="chat-feed" id="chat-feed"><div class="chat-empty">Cargando…</div></div>
-  <input class="chat-word-input" id="chat-word-input" maxlength="14" placeholder="Una palabra (opcional)...">
+  <div class="chat-compose">
+    <input class="chat-word-input" id="chat-word-input" maxlength="14" placeholder="Palabra (opcional)">
+    <button class="chat-emoji-toggle" id="chat-emoji-toggle" onclick="toggleChatEmojiGrid()">😀</button>
+    <button class="chat-send-btn" id="chat-send-btn" onclick="sendChatMsg()" disabled>Enviar</button>
+  </div>
   <div class="chat-emojis" id="chat-emojis"></div>
 </div>
 
@@ -1774,12 +1784,25 @@ async function loadLogrosVivo(pass){
 
 // [011c] CHAT GENERAL (una palabra + un emoji)
 const CHAT_EMOJIS=['⚽','🏆','🔥','🎉','👏','😂','😮','🥳','💪','❤️','😅','🤔','👍','👎','😢','😱','🙌','⭐','🐐','🧠','💻','🤖','🛡️','🔢','🎯','😎','🙏','💯'];
-let chatTimer=null,chatOpen=false,chatCooldown=false;
+let chatTimer=null,chatOpen=false,chatCooldown=false,chatSelectedEmoji=null;
 const LS_CHAT_SEEN='mundial_nticx_chat_seen';
 function renderChatEmojiGrid(){
   document.getElementById('chat-emojis').innerHTML=CHAT_EMOJIS.map(e=>
-    `<button class="chat-emoji-btn" onclick="sendChatMsg('${e}')">${e}</button>`
+    `<button class="chat-emoji-btn" onclick="pickChatEmoji('${e}')">${e}</button>`
   ).join('');
+}
+function toggleChatEmojiGrid(force){
+  const grid=document.getElementById('chat-emojis');
+  const open=force!==undefined?force:!grid.classList.contains('open');
+  grid.classList.toggle('open',open);
+}
+function pickChatEmoji(e){
+  chatSelectedEmoji=e;
+  const btn=document.getElementById('chat-emoji-toggle');
+  btn.textContent=e;
+  btn.classList.add('picked');
+  document.getElementById('chat-send-btn').disabled=false;
+  toggleChatEmojiGrid(false);
 }
 function toggleChatPanel(force){
   const panel=document.getElementById('chat-panel');
@@ -1792,17 +1815,25 @@ function toggleChatPanel(force){
     chatTimer=setInterval(loadChat,5000);
   }else{
     clearInterval(chatTimer);
+    toggleChatEmojiGrid(false);
   }
 }
-async function sendChatMsg(emoji){
-  if(chatCooldown)return;
+async function sendChatMsg(){
+  if(chatCooldown||!chatSelectedEmoji)return;
   if(!currentUser){openAuth();return;}
   chatCooldown=true;
   setTimeout(()=>chatCooldown=false,1200);
   const wordInput=document.getElementById('chat-word-input');
   const palabra=(wordInput.value||'').trim().split(/\s+/)[0].slice(0,14).replace(/[^\p{L}\p{N}]/gu,'');
+  const emoji=chatSelectedEmoji;
   const msg=(palabra?palabra+' ':'')+emoji;
+  // reset del compositor
   wordInput.value='';
+  chatSelectedEmoji=null;
+  const btn=document.getElementById('chat-emoji-toggle');
+  btn.textContent='😀';
+  btn.classList.remove('picked');
+  document.getElementById('chat-send-btn').disabled=true;
   apiPost({action:'sendChat',mail:currentUser.mail,nombre:currentUser.nombre,msg,ts:Date.now()});
   // optimista: lo muestro ya mismo sin esperar al backend
   appendChatMsgLocal({mail:currentUser.mail,nombre:currentUser.nombre,msg,ts:Date.now()});
