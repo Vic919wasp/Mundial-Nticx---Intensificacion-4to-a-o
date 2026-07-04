@@ -1541,7 +1541,7 @@ async function loadTop10(){
             <div class="top10-pos ${i<3?posCols[i]:''}">${i<3?posIcons[i]:i+1}</div>
             <div>
               <div class="top10-name">${u.nombre}${isMe?' <span style="color:var(--c2);font-size:.7rem">(vos)</span>':''}</div>
-              <div class="top10-sub">${u.temas} fecha${u.temas!==1?'s':''} jugada${u.temas!==1?'s':''}</div>
+              <div class="top10-sub">${u.temas} fecha${u.temas!==1?'s':''} jugada${u.temas!==1?'s':''} · 🗓️ Último: ${u.ultimaFecha||'—'}</div>
             </div>
             <div style="text-align:right">
               <div class="top10-pts">${u.total} pts</div>
@@ -1571,11 +1571,23 @@ async function loadDocente(){
     const usuarios=(data.usuarios||[]).slice(1);
     const totalIntentos=puntajes.length;
     const avgPts=totalIntentos?Math.round(puntajes.reduce((s,r)=>s+Number(r[3]),0)/totalIntentos*10)/10:0;
+    const porEquipo={};
+    puntajes.forEach(r=>{
+      const mail=r[0],nombre=r[1],fecha=r[5],ts=Date.parse(r[6])||0;
+      if(!porEquipo[mail]||ts>porEquipo[mail].ts)porEquipo[mail]={nombre,fecha,ts};
+    });
+    const ultimos=Object.values(porEquipo).sort((a,b)=>b.ts-a.ts);
     el.innerHTML=`
       <div class="doc-stat-row">
         <div class="doc-stat"><strong>${usuarios.length}</strong><span>Registrados</span></div>
         <div class="doc-stat"><strong>${totalIntentos}</strong><span>Partidos jugados</span></div>
         <div class="doc-stat"><strong>${avgPts}</strong><span>Prom. pts</span></div>
+      </div>
+      <div class="doc-table-wrap" style="margin-bottom:1.2rem">
+        <table class="doc-table">
+          <thead><tr><th>Equipo/Nombre</th><th>Último día que jugó</th></tr></thead>
+          <tbody>${ultimos.map(u=>`<tr><td><strong>${u.nombre}</strong></td><td>${u.fecha||'—'}</td></tr>`).join('')}</tbody>
+        </table>
       </div>
       <div class="doc-table-wrap">
         <table class="doc-table">
