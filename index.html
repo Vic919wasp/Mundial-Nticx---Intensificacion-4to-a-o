@@ -1542,7 +1542,7 @@ async function loadTop10(){
             <div class="top10-pos ${i<3?posCols[i]:''}">${i<3?posIcons[i]:i+1}</div>
             <div>
               <div class="top10-name">${u.nombre}${isMe?' <span style="color:var(--c2);font-size:.7rem">(vos)</span>':''}</div>
-              <div class="top10-sub">${u.temas} fecha${u.temas!==1?'s':''} jugada${u.temas!==1?'s':''} · 🗓️ Último: ${u.ultimaFecha||'—'}</div>
+              <div class="top10-sub">${u.temas} fecha${u.temas!==1?'s':''} jugada${u.temas!==1?'s':''} · ${u.live?'🟢 Jugando ahora':'🗓️ Última: '+(u.ultimaFecha||'—')}</div>
             </div>
             <div style="text-align:right">
               <div class="top10-pts">${u.total} pts</div>
@@ -1646,7 +1646,7 @@ async function loadMiniRank(){
   if(!el)return;
   try{
     const data=await apiGet({action:'getRanking'});
-    const ranking=data.ranking||[];
+    const ranking=(data.ranking||[]).slice().sort((a,b)=>(b.live-a.live)||(b.total-a.total));
     if(!ranking.length){el.innerHTML='';return;}
     el.innerHTML=ranking.slice(0,8).map((u,i)=>{
       const isMe=currentUser&&u.mail===currentUser.mail;
