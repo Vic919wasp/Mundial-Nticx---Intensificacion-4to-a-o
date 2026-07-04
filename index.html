@@ -350,6 +350,14 @@ a{color:inherit}
 .chat-emoji-btn{background:none;border:none;font-size:1.3rem;cursor:pointer;border-radius:8px;padding:.25rem;transition:transform .15s,background .15s}
 .chat-emoji-btn:hover{background:rgba(255,255,255,.08);transform:scale(1.15)}
 .chat-emoji-btn:disabled{opacity:.35;cursor:default;transform:none}
+.chat-word-input{margin:0 .6rem;padding:.45rem .7rem;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:.78rem;outline:none}
+.chat-word-input:focus{border-color:var(--c3)}
+
+/* ── TICKER DE CHAT EN EL QUIZ (carrusel) ── */
+.chat-ticker{display:flex;gap:.5rem;overflow-x:auto;padding:.4rem .1rem;margin:.1rem 0 .3rem;scrollbar-width:none;scroll-snap-type:x mandatory;scroll-behavior:smooth}
+.chat-ticker::-webkit-scrollbar{display:none}
+.chat-ticker-chip{flex-shrink:0;scroll-snap-align:start;background:var(--card);border:1.5px solid var(--border);border-radius:99px;padding:.3rem .7rem;font-size:.72rem;display:flex;align-items:center;gap:.4rem;white-space:nowrap}
+.chat-ticker-chip .ctc-name{font-weight:700;font-family:var(--fh);font-size:.66rem}
 
 @media(max-width:600px){
   .home-hero h1{font-size:1.5rem}
@@ -444,6 +452,7 @@ a{color:inherit}
     <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
     <div class="prog-label" id="prog-label">Pregunta 1 de 10</div>
     <div class="streak-bar" id="streak-bar"></div>
+    <div class="chat-ticker" id="chat-ticker"></div>
     <div class="mini-rank-bar" id="mini-rank-bar"></div>
     <div id="q-container"></div>
   </div>
@@ -541,6 +550,7 @@ a{color:inherit}
     <button class="lp-close" onclick="toggleChatPanel(false)">✕</button>
   </div>
   <div class="chat-feed" id="chat-feed"><div class="chat-empty">Cargando…</div></div>
+  <input class="chat-word-input" id="chat-word-input" maxlength="14" placeholder="Una palabra (opcional)...">
   <div class="chat-emojis" id="chat-emojis"></div>
 </div>
 
@@ -1163,6 +1173,7 @@ function startQuiz(temaId){
   renderQuestion();
   startHeartbeat();
   startMiniRank();
+  startChatTicker();
 }
 
 function startQuizTimer(){
@@ -1322,6 +1333,7 @@ function concludeQuiz(){
   stopMusic();
   stopHeartbeat();
   stopMiniRank();
+  stopChatTicker();
   if(!currentUser){
     const hoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
     pendingScore={tema:quizState.temaId,puntaje:quizState.score,total:quizState.questions.length,fecha:hoy};
@@ -1760,13 +1772,13 @@ async function loadLogrosVivo(pass){
   }catch(e){return false;}
 }
 
-// [011c] CHAT GENERAL (solo emojis)
+// [011c] CHAT GENERAL (una palabra + un emoji)
 const CHAT_EMOJIS=['⚽','🏆','🔥','🎉','👏','😂','😮','🥳','💪','❤️','😅','🤔','👍','👎','😢','😱','🙌','⭐','🐐','🧠','💻','🤖','🛡️','🔢','🎯','😎','🙏','💯'];
 let chatTimer=null,chatOpen=false,chatCooldown=false;
 const LS_CHAT_SEEN='mundial_nticx_chat_seen';
 function renderChatEmojiGrid(){
   document.getElementById('chat-emojis').innerHTML=CHAT_EMOJIS.map(e=>
-    `<button class="chat-emoji-btn" onclick="sendChatEmoji('${e}')">${e}</button>`
+    `<button class="chat-emoji-btn" onclick="sendChatMsg('${e}')">${e}</button>`
   ).join('');
 }
 function toggleChatPanel(force){
@@ -1782,14 +1794,18 @@ function toggleChatPanel(force){
     clearInterval(chatTimer);
   }
 }
-async function sendChatEmoji(emoji){
+async function sendChatMsg(emoji){
   if(chatCooldown)return;
   if(!currentUser){openAuth();return;}
   chatCooldown=true;
   setTimeout(()=>chatCooldown=false,1200);
-  apiPost({action:'sendChat',mail:currentUser.mail,nombre:currentUser.nombre,emoji,ts:Date.now()});
+  const wordInput=document.getElementById('chat-word-input');
+  const palabra=(wordInput.value||'').trim().split(/\s+/)[0].slice(0,14).replace(/[^\p{L}\p{N}]/gu,'');
+  const msg=(palabra?palabra+' ':'')+emoji;
+  wordInput.value='';
+  apiPost({action:'sendChat',mail:currentUser.mail,nombre:currentUser.nombre,msg,ts:Date.now()});
   // optimista: lo muestro ya mismo sin esperar al backend
-  appendChatMsgLocal({mail:currentUser.mail,nombre:currentUser.nombre,emoji,ts:Date.now()});
+  appendChatMsgLocal({mail:currentUser.mail,nombre:currentUser.nombre,msg,ts:Date.now()});
   loadChat();
 }
 function appendChatMsgLocal(m){
@@ -1799,7 +1815,7 @@ function appendChatMsgLocal(m){
   const isMe=currentUser&&m.mail===currentUser.mail;
   const div=document.createElement('div');
   div.className='chat-msg'+(isMe?' me':'');
-  div.innerHTML=`<span class="cm-name">${m.nombre}</span><span class="cm-emoji">${m.emoji}</span>`;
+  div.innerHTML=`<span class="cm-name">${m.nombre}</span><span class="cm-emoji">${m.msg}</span>`;
   feed.appendChild(div);
   feed.scrollTop=feed.scrollHeight;
 }
@@ -1808,18 +1824,48 @@ async function loadChat(forceScroll){
     const data=await apiGet({action:'getChat'});
     const msgs=data.mensajes||[];
     const feed=document.getElementById('chat-feed');
-    if(!feed)return;
-    if(!msgs.length){feed.innerHTML='<div class="chat-empty">Todavía no hay mensajes. ¡Mandá el primer emoji! 👋</div>';return;}
-    feed.innerHTML=msgs.map(m=>{
-      const isMe=currentUser&&m.mail===currentUser.mail;
-      return`<div class="chat-msg${isMe?' me':''}"><span class="cm-name">${m.nombre}</span><span class="cm-emoji">${m.emoji}</span></div>`;
-    }).join('');
-    if(chatOpen||forceScroll)feed.scrollTop=feed.scrollHeight;
+    if(feed){
+      if(!msgs.length){feed.innerHTML='<div class="chat-empty">Todavía no hay mensajes. ¡Mandá el primero! 👋</div>';}
+      else{
+        feed.innerHTML=msgs.map(m=>{
+          const isMe=currentUser&&m.mail===currentUser.mail;
+          return`<div class="chat-msg${isMe?' me':''}"><span class="cm-name">${m.nombre}</span><span class="cm-emoji">${m.msg}</span></div>`;
+        }).join('');
+        if(chatOpen||forceScroll)feed.scrollTop=feed.scrollHeight;
+      }
+    }
     let seen=0;try{seen=Number(localStorage.getItem(LS_CHAT_SEEN)||0);}catch(e){}
     if(!chatOpen&&msgs.length>seen)document.getElementById('chat-fab-dot').classList.add('show');
     if(chatOpen)try{localStorage.setItem(LS_CHAT_SEEN,String(msgs.length));}catch(e){}
+    renderChatTicker(msgs);
   }catch(e){}
 }
+function renderChatTicker(msgs){
+  const el=document.getElementById('chat-ticker');
+  if(!el)return;
+  if(!msgs||!msgs.length){el.innerHTML='';return;}
+  el.innerHTML=msgs.slice(-15).map(m=>{
+    const col=colorForJugador(m.mail||m.nombre);
+    return`<div class="chat-ticker-chip" style="border-color:${col.b}"><span class="ctc-name">${m.nombre}</span><span>${m.msg}</span></div>`;
+  }).join('');
+}
+let chatTickerTimer=null;
+function startChatTicker(){clearInterval(chatTickerTimer);loadChat();chatTickerTimer=setInterval(loadChat,6000);startChatTickerCarousel();}
+function stopChatTicker(){clearInterval(chatTickerTimer);stopChatTickerCarousel();}
+let chatTickerCarouselTimer=null;
+function startChatTickerCarousel(){
+  clearInterval(chatTickerCarouselTimer);
+  chatTickerCarouselTimer=setInterval(()=>{
+    const el=document.getElementById('chat-ticker');
+    if(!el||!el.children.length)return;
+    const chipW=el.children[0].getBoundingClientRect().width+8;
+    const maxScroll=el.scrollWidth-el.clientWidth;
+    if(maxScroll<=2)return;
+    const next=el.scrollLeft+chipW;
+    el.scrollTo({left:next>=maxScroll-2?0:next,behavior:'smooth'});
+  },2400);
+}
+function stopChatTickerCarousel(){clearInterval(chatTickerCarouselTimer);}
 function startChatBadgePolling(){setInterval(loadChat,20000);}
 
 // [012] PRINT / PDF
@@ -1887,7 +1933,7 @@ function showScreen(id){
   });
   window.scrollTo({top:0,behavior:'smooth'});
 }
-function goHome(){clearInterval(quizTimerInterval);stopHeartbeat();stopMiniRank();stopMusic();renderHome();showScreen('home');}
+function goHome(){clearInterval(quizTimerInterval);stopHeartbeat();stopMiniRank();stopChatTicker();stopMusic();renderHome();showScreen('home');}
 
 loadSavedUser();
 renderHome();
